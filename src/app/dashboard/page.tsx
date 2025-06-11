@@ -62,20 +62,45 @@ export default function DashboardPage() {
         };
         const result = await generateIncidentSummary(input);
         
-        setIncidents(prevIncidents =>
-          prevIncidents.map(i =>
-            i.id === incident.id ? { ...i, generatedSummary: result.summary } : i
-          )
-        );
-        setSelectedIncident(prevSelected => prevSelected ? {...prevSelected, generatedSummary: result.summary} : null);
+        const summaryText = result?.summary;
+
+        if (summaryText) {
+          setIncidents(prevIncidents =>
+            prevIncidents.map(i =>
+              i.id === incident.id ? { ...i, generatedSummary: summaryText } : i
+            )
+          );
+          setSelectedIncident(prevSelected => prevSelected ? {...prevSelected, generatedSummary: summaryText} : null);
+        } else {
+          console.error("AI summary was not found in the result or result was malformed:", result);
+          toast({
+            title: "AI Summary Error",
+            description: "AI analysis did not return a valid summary.",
+            variant: "destructive",
+          });
+          const errorMessage = "AI summary could not be generated or was invalid.";
+          setIncidents(prevIncidents =>
+            prevIncidents.map(i =>
+              i.id === incident.id ? { ...i, generatedSummary: errorMessage } : i
+            )
+          );
+          setSelectedIncident(prevSelected => prevSelected ? {...prevSelected, generatedSummary: errorMessage} : null);
+        }
 
       } catch (error) {
         console.error("Failed to generate AI summary:", error);
+        const errorMessage = "Error generating AI summary for this incident.";
         toast({
           title: "AI Summary Error",
           description: "Could not generate AI summary for this incident.",
           variant: "destructive",
         });
+         setIncidents(prevIncidents =>
+            prevIncidents.map(i =>
+              i.id === incident.id ? { ...i, generatedSummary: errorMessage } : i
+            )
+          );
+        setSelectedIncident(prevSelected => prevSelected ? {...prevSelected, generatedSummary: errorMessage} : null);
       } finally {
         setIsLoadingAiSummary(false);
       }
