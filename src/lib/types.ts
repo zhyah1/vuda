@@ -11,6 +11,7 @@ export type IncidentType =
 export interface IncidentAction {
   timestamp: string;
   description: string;
+  assignedToDepartment?: string; // Added optional field
 }
 
 export interface ChatMessage {
@@ -34,5 +35,6 @@ export interface Incident {
   initialActionsTaken?: string;
   generatedSummary?: string;
   actionLog?: IncidentAction[];
-  chatHistory?: ChatMessage[]; // Optional: To store chat history if needed persistently
+  chatHistory?: ChatMessage[];
 }
+

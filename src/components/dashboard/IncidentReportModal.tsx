@@ -10,7 +10,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, Di
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { AlertTriangle, CheckCircle, Info, Loader2, Send, MessageSquare } from 'lucide-react';
+import { AlertTriangle, CheckCircle, Info, Loader2, Send, MessageSquare, Users } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { cn } from '@/lib/utils';
@@ -119,9 +119,9 @@ const IncidentReportModal: React.FC<IncidentReportModalProps> = ({ incident, isO
         </DialogHeader>
         
         <ScrollArea className="flex-grow overflow-y-auto">
-          <div className="p-4">
+          <div className="p-4 flex flex-col gap-6">
             {/* Top Section: Camera Feed, Action Log, AI Analysis, Details */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               {/* Left Column: Video Feed Placeholder & Action Log */}
               <div className="space-y-6">
                 <div>
@@ -138,7 +138,10 @@ const IncidentReportModal: React.FC<IncidentReportModalProps> = ({ incident, isO
                 </div>
 
                 <div>
-                  <h3 className="text-lg font-semibold text-foreground mb-2">Action Log</h3>
+                  <h3 className="text-lg font-semibold text-foreground mb-2 flex items-center">
+                     <Users className="h-5 w-5 mr-2 text-primary" />
+                     Action Log & Department Assignment
+                  </h3>
                   <ScrollArea className="h-48 border border-border rounded-md p-3 bg-muted/30">
                     {incident.actionLog && incident.actionLog.length > 0 ? (
                       <ul className="space-y-2">
@@ -147,6 +150,9 @@ const IncidentReportModal: React.FC<IncidentReportModalProps> = ({ incident, isO
                             <CheckCircle className="h-3 w-3 text-success mr-2 mt-0.5 shrink-0" />
                             <div>
                               <span className="font-medium text-foreground/90">{action.timestamp}</span>: {action.description}
+                              {action.assignedToDepartment && (
+                                <span className="italic text-primary/80 ml-1">- Dept: {action.assignedToDepartment}</span>
+                              )}
                             </div>
                           </li>
                         ))}
@@ -199,9 +205,9 @@ const IncidentReportModal: React.FC<IncidentReportModalProps> = ({ incident, isO
               </div>
             </div>
 
-            {/* Bottom Section: Chat Interface */}
+            {/* Bottom Section: Chat Interface (Full Width) */}
             <div>
-              <Card className="flex flex-col shadow-md bg-card/80 border border-border h-[calc(50vh-5rem)] sm:h-[calc(40vh-4rem)] md:h-[calc(100vh-28rem)] max-h-[500px] min-h-[300px]"> {/* Adjusted height */}
+              <Card className="flex flex-col shadow-md bg-card/80 border border-border h-[calc(100vh_-_16rem_-_18rem)] sm:h-[calc(100vh_-_16rem_-_18rem)] md:h-[calc(100vh_-_10rem_-_20rem)] max-h-[400px] min-h-[300px] w-full">
                 <CardHeader className="p-3 border-b border-border">
                   <CardTitle className="text-base font-semibold flex items-center">
                     <MessageSquare className="h-5 w-5 mr-2 text-primary" />

@@ -70,26 +70,46 @@ const initialActions: string[] = [
   "Additional units requested for crowd control."
 ];
 
+const departments = ['Police', 'Fireforce', 'MVD', 'EMS', 'Disaster Management', 'Event Security', 'City Transit Authority'];
+
 const actionLogSamples: IncidentAction[][] = [
   [
     { timestamp: "14:32:15", description: "Threat Detected via Camera Feed" },
     { timestamp: "14:32:18", description: "AI Context Analyzed: Potential Violent Crime" },
-    { timestamp: "14:32:20", description: "Law Enforcement Dispatched (Unit TVM-07)" },
+    { timestamp: "14:32:20", description: "Law Enforcement Dispatched (Unit TVM-07)", assignedToDepartment: departments[0] }, // Police
     { timestamp: "14:32:25", description: "AI Report Sent to Field Units" },
-    { timestamp: "14:33:00", description: "Medical Support Team En Route (ETA 3 min)" },
+    { timestamp: "14:33:00", description: "Medical Support Team En Route (ETA 3 min)", assignedToDepartment: departments[3] }, // EMS
   ],
   [
     { timestamp: "08:15:30", description: "Medical Alert Triggered by Device" },
     { timestamp: "08:15:35", description: "Vitals Transmitted: Abnormal Heart Rate" },
-    { timestamp: "08:15:40", description: "EMS Dispatched to Location" },
+    { timestamp: "08:15:40", description: "EMS Dispatched to Location", assignedToDepartment: departments[3] }, // EMS
     { timestamp: "08:16:00", description: "Emergency Contact Notified by AI" },
   ],
   [
     { timestamp: "18:45:10", description: "Crowd Anomaly Detected: Rapid Condensation" },
     { timestamp: "18:45:15", description: "AI Analysis: Potential Stampede Risk at Event Exit" },
-    { timestamp: "18:45:20", description: "Alert Sent to Event Security Command" },
-    { timestamp: "18:45:30", description: "Nearby Patrols Re-routed to Location" },
+    { timestamp: "18:45:20", description: "Alert Sent to Event Security Command", assignedToDepartment: departments[5] }, // Event Security
+    { timestamp: "18:45:30", description: "Nearby Patrols Re-routed to Location", assignedToDepartment: departments[0] }, // Police
     { timestamp: "18:46:00", description: "PA System Activated with Dispersal Instructions" },
+  ],
+  [
+    { timestamp: "10:05:00", description: "Smoke detected, Camera 3A"},
+    { timestamp: "10:05:10", description: "Thermal anomaly confirmed"},
+    { timestamp: "10:05:15", description: "Fire Brigade Dispatched", assignedToDepartment: departments[1]}, // Fireforce
+    { timestamp: "10:05:20", description: "Police unit requested for traffic control", assignedToDepartment: departments[0]}, // Police
+  ],
+  [
+    { timestamp: "16:20:00", description: "Multi-vehicle collision reported, Junction X"},
+    { timestamp: "16:20:10", description: "MVD Notified for accident report", assignedToDepartment: departments[2]}, // MVD
+    { timestamp: "16:20:15", description: "Ambulance Dispatched", assignedToDepartment: departments[3]}, // EMS
+    { timestamp: "16:20:25", description: "Police on site for investigation", assignedToDepartment: departments[0]}, // Police
+  ],
+  [
+    { timestamp: "09:30:00", description: "Unattended package identified near transit hub entrance." },
+    { timestamp: "09:30:05", description: "Bomb squad alerted for potential threat.", assignedToDepartment: departments[0] }, // Police (assuming bomb squad is part of Police)
+    { timestamp: "09:30:10", description: "Transit security notified to cordon off area.", assignedToDepartment: departments[6] }, // City Transit Authority
+    { timestamp: "09:35:00", description: "Package deemed safe by authorities." }
   ]
 ];
 
@@ -172,3 +192,4 @@ export const getInitialMockIncidents = (): Incident[] => {
   return Array.from({ length: INITIAL_INCIDENTS_COUNT }, generateMockIncident)
     .sort((a, b) => b.timestamp.getTime() - a.timestamp.getTime());
 };
+
