@@ -10,9 +10,10 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, Di
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { AlertTriangle, CheckCircle, Info, Loader2, Send, MessageSquare, Users } from 'lucide-react';
+import { AlertTriangle, CheckCircle, Info, Loader2, Send, MessageSquare, Users, Briefcase } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { cn } from '@/lib/utils';
 import { format } from 'date-fns';
 
@@ -21,18 +22,29 @@ interface IncidentReportModalProps {
   isOpen: boolean;
   onClose: () => void;
   isLoadingAiSummary: boolean;
+  onManualAssign: (incidentId: string, department: string, actionDescription: string) => void;
+  assignableDepartments: string[];
 }
 
-const IncidentReportModal: React.FC<IncidentReportModalProps> = ({ incident, isOpen, onClose, isLoadingAiSummary }) => {
+const IncidentReportModal: React.FC<IncidentReportModalProps> = ({ 
+  incident, 
+  isOpen, 
+  onClose, 
+  isLoadingAiSummary,
+  onManualAssign,
+  assignableDepartments
+}) => {
   const [chatMessages, setChatMessages] = useState<ChatMessage[]>([]);
   const [currentChatMessage, setCurrentChatMessage] = useState('');
   const [isChatLoading, setIsChatLoading] = useState(false);
+  const [selectedDepartmentToAssign, setSelectedDepartmentToAssign] = useState<string>('');
   const { toast } = useToast();
   const chatScrollAreaRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    if (incident?.chatHistory) {
-      setChatMessages(incident.chatHistory);
+    if (incident) {
+      setChatMessages(incident.chatHistory || []);
+      setSelectedDepartmentToAssign(''); // Reset selected department when incident changes
     } else {
       setChatMessages([]);
     }
@@ -105,6 +117,20 @@ const IncidentReportModal: React.FC<IncidentReportModalProps> = ({ incident, isO
       setIsChatLoading(false);
     }
   };
+
+  const handleManualAssignment = () => {
+    if (!incident || !selectedDepartmentToAssign) {
+      toast({
+        title: "Assignment Error",
+        description: "Please select a department to assign.",
+        variant: "destructive",
+      });
+      return;
+    }
+    const description = `Manually assigned to ${selectedDepartmentToAssign} by operator.`;
+    onManualAssign(incident.id, selectedDepartmentToAssign, description);
+    setSelectedDepartmentToAssign(''); // Reset after assignment
+  };
   
   if (!incident) return null;
 
@@ -120,9 +146,7 @@ const IncidentReportModal: React.FC<IncidentReportModalProps> = ({ incident, isO
         
         <ScrollArea className="flex-grow overflow-y-auto">
           <div className="p-4 flex flex-col gap-6">
-            {/* Top Section: Camera Feed, Action Log, AI Analysis, Details */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              {/* Left Column: Video Feed Placeholder & Action Log */}
               <div className="space-y-6">
                 <div>
                   <h3 className="text-lg font-semibold text-foreground mb-2">Camera Feed</h3>
@@ -140,9 +164,9 @@ const IncidentReportModal: React.FC<IncidentReportModalProps> = ({ incident, isO
                 <div>
                   <h3 className="text-lg font-semibold text-foreground mb-2 flex items-center">
                      <Users className="h-5 w-5 mr-2 text-primary" />
-                     Action Log & Department Assignment
+                     Action Log & Assignment
                   </h3>
-                  <ScrollArea className="h-48 border border-border rounded-md p-3 bg-muted/30">
+                  <ScrollArea className="h-40 border border-border rounded-md p-3 bg-muted/30 mb-3">
                     {incident.actionLog && incident.actionLog.length > 0 ? (
                       <ul className="space-y-2">
                         {incident.actionLog.map((action, index) => (
@@ -161,10 +185,28 @@ const IncidentReportModal: React.FC<IncidentReportModalProps> = ({ incident, isO
                       <p className="text-xs text-muted-foreground">No actions logged yet.</p>
                     )}
                   </ScrollArea>
+                  <div className="border border-border rounded-md p-3 bg-muted/30">
+                    <h4 className="text-sm font-semibold text-foreground mb-2 flex items-center">
+                      <Briefcase className="h-4 w-4 mr-2 text-primary"/>
+                      Manual Task Assignment
+                    </h4>
+                    <div className="flex items-center gap-2">
+                      <Select value={selectedDepartmentToAssign} onValueChange={setSelectedDepartmentToAssign}>
+                        <SelectTrigger className="flex-grow">
+                          <SelectValue placeholder="Select Department" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {assignableDepartments.map(dept => (
+                            <SelectItem key={dept} value={dept}>{dept}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      <Button onClick={handleManualAssignment} size="sm" disabled={!selectedDepartmentToAssign}>Assign</Button>
+                    </div>
+                  </div>
                 </div>
               </div>
 
-              {/* Right Column: AI Analysis & Details */}
               <div className="space-y-6">
                 <div>
                   <h3 className="text-lg font-semibold text-foreground mb-2 flex items-center">
@@ -205,7 +247,6 @@ const IncidentReportModal: React.FC<IncidentReportModalProps> = ({ incident, isO
               </div>
             </div>
 
-            {/* Bottom Section: Chat Interface (Full Width) */}
             <div>
               <Card className="flex flex-col shadow-md bg-card/80 border border-border h-[calc(100vh_-_16rem_-_18rem)] sm:h-[calc(100vh_-_16rem_-_18rem)] md:h-[calc(100vh_-_10rem_-_20rem)] max-h-[400px] min-h-[300px] w-full">
                 <CardHeader className="p-3 border-b border-border">
@@ -283,5 +324,3 @@ const IncidentReportModal: React.FC<IncidentReportModalProps> = ({ incident, isO
 };
 
 export default IncidentReportModal;
-
-    

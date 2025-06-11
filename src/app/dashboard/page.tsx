@@ -8,10 +8,13 @@ import KpiBar from '@/components/dashboard/KpiBar';
 import CityMap from '@/components/dashboard/CityMap';
 import LiveAlerts from '@/components/dashboard/LiveAlerts';
 import IncidentReportModal from '@/components/dashboard/IncidentReportModal';
-import type { Incident } from '@/lib/types';
+import type { Incident, IncidentAction } from '@/lib/types';
 import { generateMockIncident, getInitialMockIncidents, INITIAL_INCIDENTS_COUNT } from '@/lib/mockData';
 import { generateIncidentSummary, type GenerateIncidentSummaryInput } from '@/ai/flows/summarize-incident';
 import { useToast } from "@/hooks/use-toast";
+import { format } from 'date-fns';
+
+const DEPARTMENTS_LIST = ['Police', 'Fireforce', 'MVD', 'EMS', 'Disaster Management', 'Event Security', 'City Transit Authority', 'Public Works', 'Animal Control'];
 
 export default function DashboardPage() {
   const [incidents, setIncidents] = useState<Incident[]>([]);
@@ -33,7 +36,7 @@ export default function DashboardPage() {
   useEffect(() => {
     const interval = setInterval(() => {
       const newIncident = generateMockIncident();
-      setIncidents(prevIncidents => [newIncident, ...prevIncidents].slice(0, 50)); // Keep max 50 incidents
+      setIncidents(prevIncidents => [newIncident, ...prevIncidents].slice(0, 50)); 
        if (newIncident.status !== 'Resolved') {
         toast({
           title: `New Alert: ${newIncident.title}`,
@@ -41,7 +44,7 @@ export default function DashboardPage() {
           variant: newIncident.status === 'Critical' ? 'destructive' : 'default',
         });
       }
-    }, Math.random() * 5000 + 10000); // 10-15 seconds
+    }, Math.random() * 5000 + 10000); 
 
     return () => clearInterval(interval);
   }, [toast]);
@@ -113,7 +116,6 @@ export default function DashboardPage() {
   };
 
   const handleRefreshAlerts = () => {
-    // Simulate refreshing data, e.g., by re-fetching or re-generating a few
     const refreshedIncidents = getInitialMockIncidents().slice(0, INITIAL_INCIDENTS_COUNT);
     setIncidents(refreshedIncidents);
     toast({
@@ -122,19 +124,44 @@ export default function DashboardPage() {
     });
   };
 
+  const handleManualAssignIncident = useCallback((incidentId: string, department: string, actionDescription: string) => {
+    const newAction: IncidentAction = {
+      timestamp: format(new Date(), 'HH:mm:ss'),
+      description: actionDescription,
+      assignedToDepartment: department,
+    };
+
+    setIncidents(prevIncidents =>
+      prevIncidents.map(inc =>
+        inc.id === incidentId
+          ? { ...inc, actionLog: [...(inc.actionLog || []), newAction] }
+          : inc
+      )
+    );
+
+    setSelectedIncident(prevSelected =>
+      prevSelected && prevSelected.id === incidentId
+        ? { ...prevSelected, actionLog: [...(prevSelected.actionLog || []), newAction] }
+        : prevSelected
+    );
+
+    toast({
+      title: "Task Assigned",
+      description: `Incident assigned to ${department}.`,
+    });
+  }, [toast]);
+
   return (
     <div className="flex flex-col min-h-screen bg-background">
       <Header />
-      <main className="flex-grow pt-16 flex flex-col"> {/* pt-16 for fixed header height */}
+      <main className="flex-grow pt-16 flex flex-col">
         <KpiBar activeIncidents={activeIncidentsCount} />
         
         <div className="flex-grow grid grid-cols-1 lg:grid-cols-3 gap-4 md:gap-6 p-4 md:p-6 overflow-hidden">
-          {/* Left Column: City Map */}
           <div className="lg:col-span-2 h-[60vh] lg:h-auto min-h-[400px]">
             <CityMap incidents={incidents} />
           </div>
 
-          {/* Right Column: Live Incident Feed */}
           <div className="lg:col-span-1 h-[60vh] lg:h-auto min-h-[400px]">
             <LiveAlerts incidents={incidents} onViewReport={handleViewReport} onRefresh={handleRefreshAlerts} />
           </div>
@@ -147,6 +174,8 @@ export default function DashboardPage() {
           isOpen={isModalOpen}
           onClose={handleCloseModal}
           isLoadingAiSummary={isLoadingAiSummary}
+          onManualAssign={handleManualAssignIncident}
+          assignableDepartments={DEPARTMENTS_LIST}
         />
       )}
     </div>
