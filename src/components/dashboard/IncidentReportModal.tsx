@@ -146,18 +146,20 @@ const IncidentReportModal: React.FC<IncidentReportModalProps> = ({
         
         <ScrollArea className="flex-grow overflow-y-auto">
           <div className="p-4 flex flex-col gap-6">
+            {/* Top section: Camera Feed, Action Log, AI Analysis, Incident Details */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              {/* Left Column: Camera Feed & Action Log */}
               <div className="space-y-6">
                 <div>
                   <h3 className="text-lg font-semibold text-foreground mb-2">Camera Feed</h3>
                   <div className="aspect-video bg-muted rounded-md overflow-hidden relative border border-border">
-                    <Image 
-                      src={incident.cameraImage || "https://placehold.co/600x400.png"} 
-                      alt="Incident camera feed placeholder" 
-                      layout="fill"
-                      objectFit="cover"
-                      data-ai-hint="street security camera"
-                    />
+                     <Image 
+                        src={incident.cameraImage || "https://placehold.co/600x400.png"} 
+                        alt="Incident camera feed placeholder" 
+                        layout="fill"
+                        objectFit="cover"
+                        data-ai-hint="street security camera"
+                      />
                   </div>
                 </div>
 
@@ -207,6 +209,7 @@ const IncidentReportModal: React.FC<IncidentReportModalProps> = ({
                 </div>
               </div>
 
+              {/* Right Column: AI Analysis & Incident Details */}
               <div className="space-y-6">
                 <div>
                   <h3 className="text-lg font-semibold text-foreground mb-2 flex items-center">
@@ -247,8 +250,9 @@ const IncidentReportModal: React.FC<IncidentReportModalProps> = ({
               </div>
             </div>
 
+            {/* Bottom section: Chat Assistant */}
             <div>
-              <Card className="flex flex-col shadow-md bg-card/80 border border-border h-[calc(100vh_-_16rem_-_18rem)] sm:h-[calc(100vh_-_16rem_-_18rem)] md:h-[calc(100vh_-_10rem_-_20rem)] max-h-[400px] min-h-[300px] w-full">
+              <Card className="flex flex-col shadow-md bg-card/80 border border-border h-72 max-h-72 min-h-56 w-full">
                 <CardHeader className="p-3 border-b border-border">
                   <CardTitle className="text-base font-semibold flex items-center">
                     <MessageSquare className="h-5 w-5 mr-2 text-primary" />
