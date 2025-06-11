@@ -1,5 +1,11 @@
 export type IncidentStatus = 'Critical' | 'Warning' | 'Resolved' | 'New';
-export type IncidentType = 'Violent Crime' | 'Medical Emergency' | 'Fire Alert' | 'Traffic Accident' | 'Suspicious Activity';
+export type IncidentType = 
+  | 'Violent Crime' 
+  | 'Medical Emergency' 
+  | 'Fire Alert' 
+  | 'Traffic Accident' 
+  | 'Suspicious Activity'
+  | 'Public Safety Threat';
 
 export interface IncidentAction {
   timestamp: string;

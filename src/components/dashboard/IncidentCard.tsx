@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { formatDistanceToNow } from 'date-fns';
-import { ShieldAlert, HeartPulse, Flame, Car, Eye, AlertTriangle, Tags } from 'lucide-react';
+import { ShieldAlert, HeartPulse, Flame, Car, Eye, AlertTriangle, Tags, AlertOctagon } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 interface IncidentCardProps {
@@ -20,6 +20,7 @@ const getIncidentIcon = (type: Incident['type']) => {
     case 'Fire Alert': return <Flame className="h-5 w-5 text-orange-500" />;
     case 'Traffic Accident': return <Car className="h-5 w-5 text-yellow-500" />;
     case 'Suspicious Activity': return <Eye className="h-5 w-5 text-purple-400" />;
+    case 'Public Safety Threat': return <AlertOctagon className="h-5 w-5 text-red-600" />; // New icon for Public Safety Threat
     default: return <AlertTriangle className="h-5 w-5 text-foreground" />;
   }
 };
