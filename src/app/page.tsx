@@ -89,7 +89,7 @@ export default function LandingPage() {
               </div>
             </div>
             <p className="text-xl text-primary mt-16 font-semibold">
-              VUDA is poised to redefine urban safety. Our platform is designed to help cities achieve an average 70% reduction in emergency response times and a 50% decrease in false alarms. The future of safety isn’t just watching—it’s understanding.
+              VUDA is poised to redefine urban safety. Our platform is designed to help cities achieve an average 70% reduction in emergency response times and a 50% decrease in false alarms. The future of safety isn’t just watching—it’s understanding and acting autonomously.
             </p>
           </div>
         </section>
