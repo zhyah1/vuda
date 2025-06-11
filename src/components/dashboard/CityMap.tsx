@@ -1,34 +1,33 @@
+
 import type React from 'react';
 import Image from 'next/image';
-import { MapPin, Circle } from 'lucide-react'; // Using Circle for camera dots as requested
+import { MapPin, Circle } from 'lucide-react';
 import type { Incident } from '@/lib/types';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 
 interface CityMapProps {
   incidents: Incident[];
 }
 
-// Predefined camera locations for the demo
+// Predefined camera locations for Thiruvananthapuram (fictional)
 const cameraLocations = [
-  { id: 'cam1', name: 'Civic Center Camera', lat: 34.055, lon: -118.245, initialIncidents: 0 },
-  { id: 'cam2', name: 'Downtown Crossing', lat: 34.050, lon: -118.250, initialIncidents: 1 },
-  { id: 'cam3', name: 'Suburbia Park Entrance', lat: 34.060, lon: -118.230, initialIncidents: 0 },
-  { id: 'cam4', name: 'Riverside Bridge Cam', lat: 34.045, lon: -118.255, initialIncidents: 0 },
-  { id: 'cam5', name: 'Industrial Zone 7', lat: 34.030, lon: -118.220, initialIncidents: 1 },
+  { id: 'cam1', name: 'Technopark Main Gate', lat: 8.545, lon: 76.915, initialIncidents: 0 },
+  { id: 'cam2', name: 'East Fort Junction', lat: 8.483, lon: 76.946, initialIncidents: 1 },
+  { id: 'cam3', name: 'Kowdiar Palace View', lat: 8.512, lon: 76.935, initialIncidents: 0 },
+  { id: 'cam4', name: 'Shanghumugham Beach Front', lat: 8.475, lon: 76.880, initialIncidents: 0 },
+  { id: 'cam5', name: 'Pattom Central', lat: 8.505, lon: 76.900, initialIncidents: 1 },
 ];
 
 
 const CityMap: React.FC<CityMapProps> = ({ incidents }) => {
-  // For demo purposes, we'll just place pins somewhat randomly within a bounding box
-  // A real implementation would use actual coordinates and map library.
   const mapWidth = 800; // Corresponds to placeholder image width
   const mapHeight = 600; // Corresponds to placeholder image height
 
   const getPinPosition = (lat: number, lon: number) => {
-    // Simplified conversion of lat/lon to x/y percentage for demo
-    // These ranges are arbitrary for demonstration on a static image.
-    const minLat = 34.020; const maxLat = 34.070;
-    const minLon = -118.270; const maxLon = -118.210;
+    // Simplified conversion of lat/lon to x/y percentage for Thiruvananthapuram (fictional bounds)
+    const minLat = 8.450; const maxLat = 8.550; // Approx 0.1 degree span
+    const minLon = 76.870; const maxLon = 76.960; // Approx 0.09 degree span
 
     const xPercent = ((lon - minLon) / (maxLon - minLon)) * 100;
     const yPercent = ((maxLat - lat) / (maxLat - minLat)) * 100; // Invert Y for screen coords
@@ -42,25 +41,25 @@ const CityMap: React.FC<CityMapProps> = ({ incidents }) => {
   return (
     <Card className="shadow-xl h-full overflow-hidden">
       <CardHeader>
-        <CardTitle className="text-lg font-semibold text-foreground">City Activity Map</CardTitle>
+        <CardTitle className="text-lg font-semibold text-foreground">City Activity Map (Thiruvananthapuram)</CardTitle>
       </CardHeader>
       <CardContent className="p-0 relative h-[calc(100%-4rem)]"> {/* Adjust height based on header */}
         <Image
           src="https://placehold.co/1200x800.png"
-          alt="City Map"
+          alt="Thiruvananthapuram City Map"
           layout="fill"
           objectFit="cover"
           className="opacity-50"
-          data-ai-hint="city map aerial"
+          data-ai-hint="Thiruvananthapuram city map"
         />
         <TooltipProvider>
           {cameraLocations.map((camera) => {
             const activeIncidentAtCamera = incidents.find(
               (inc) => 
               inc.status !== 'Resolved' &&
-              // Simple proximity check for demo
-              Math.abs(inc.latitude - camera.lat) < 0.005 && 
-              Math.abs(inc.longitude - camera.lon) < 0.005
+              // Simple proximity check for demo (adjust sensitivity if needed for new coord system)
+              Math.abs(inc.latitude - camera.lat) < 0.003 && 
+              Math.abs(inc.longitude - camera.lon) < 0.003
             );
             const position = getPinPosition(camera.lat, camera.lon);
             const isAlert = !!activeIncidentAtCamera;
@@ -89,20 +88,5 @@ const CityMap: React.FC<CityMapProps> = ({ incidents }) => {
     </Card>
   );
 };
-
-// Dummy Card components if not imported globally or from ui
-const Card: React.FC<React.HTMLAttributes<HTMLDivElement>> = ({ className, children, ...props }) => (
-  <div className={`bg-card text-card-foreground rounded-lg border ${className}`} {...props}>{children}</div>
-);
-const CardHeader: React.FC<React.HTMLAttributes<HTMLDivElement>> = ({ className, children, ...props }) => (
-  <div className={`p-4 border-b ${className}`} {...props}>{children}</div>
-);
-const CardTitle: React.FC<React.HTMLAttributes<HTMLHeadingElement>> = ({ className, children, ...props }) => (
-  <h3 className={`text-lg font-semibold ${className}`} {...props}>{children}</h3>
-);
-const CardContent: React.FC<React.HTMLAttributes<HTMLDivElement>> = ({ className, children, ...props }) => (
-  <div className={`p-4 ${className}`} {...props}>{children}</div>
-);
-
 
 export default CityMap;

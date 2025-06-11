@@ -1,3 +1,4 @@
+
 import type { Incident, IncidentType, IncidentStatus, IncidentAction } from './types';
 
 const titles: Record<IncidentType, string[]> = {
@@ -8,23 +9,24 @@ const titles: Record<IncidentType, string[]> = {
   'Suspicious Activity': ['Loitering Detected', 'Unattended Package', 'Trespassing Alert'],
 };
 
+// Updated locations for Thiruvananthapuram (fictional context)
 const locations: string[] = [
-  '123 Main St, Civic Center', '456 Oak Ave, Downtown', '789 Pine Ln, Suburbia',
-  '321 Elm Rd, Industrial Park', '654 Maple Dr, Riverside', '987 Birch Way, Uptown',
-  'Central Station Plaza', 'City Hall Park', 'Metropolis Bridge North End', 'General Hospital ER Entrance'
+  'Technopark Phase 1', 'East Fort Junction', 'Kowdiar Avenue',
+  'Pattom Main Road', 'Shanghumugham Beach Rd', 'Statue Junction',
+  'Medical College Campus', 'Museum Road', 'Peroorkada Market', 'Ulloor Crossing'
 ];
 
 const initialAnalyses: string[] = [
   "Motion detected, audio sensors picked up shouting.",
   "Thermal imaging shows elevated heat signature.",
   "Facial recognition matched a person of interest.",
-  "License plate reader flagged a stolen vehicle.",
+  "License plate reader flagged a suspicious vehicle.",
   "Crowd density analysis indicates unusual gathering."
 ];
 
 const initialActions: string[] = [
   "Camera automatically panned and zoomed to event.",
-  "Local law enforcement patrol notified via automated alert.",
+  "Local police patrol notified via automated alert.",
   "Emergency medical services pre-alerted.",
   "Traffic management system rerouting vehicles.",
   "Security drone dispatched for aerial surveillance."
@@ -34,15 +36,15 @@ const actionLogSamples: IncidentAction[][] = [
   [
     { timestamp: "14:32:15", description: "Threat Detected via Camera Feed" },
     { timestamp: "14:32:18", description: "AI Context Analyzed: Potential Violent Crime" },
-    { timestamp: "14:32:20", description: "Law Enforcement Dispatched (Unit 12)" },
+    { timestamp: "14:32:20", description: "Law Enforcement Dispatched (Unit TVM-07)" },
     { timestamp: "14:32:25", description: "AI Report Sent to Field Units" },
-    { timestamp: "14:33:00", description: "Medical Drone En Route (ETA 2 min)" },
+    { timestamp: "14:33:00", description: "Medical Support Team En Route (ETA 3 min)" },
   ],
   [
-    { timestamp: "08:15:30", description: "Medical Alert Triggered by Wearable" },
-    { timestamp: "08:15:35", description: "Vitals Transmitted: Low Heart Rate" },
+    { timestamp: "08:15:30", description: "Medical Alert Triggered by Device" },
+    { timestamp: "08:15:35", description: "Vitals Transmitted: Abnormal Heart Rate" },
     { timestamp: "08:15:40", description: "EMS Dispatched to Location" },
-    { timestamp: "08:16:00", description: "Family Contact Notified by AI" },
+    { timestamp: "08:16:00", description: "Emergency Contact Notified by AI" },
   ]
 ];
 
@@ -54,12 +56,18 @@ export const generateMockIncident = (): Incident => {
   const randomType = Object.keys(titles)[Math.floor(Math.random() * Object.keys(titles).length)] as IncidentType;
   const randomStatus = ['Critical', 'Warning', 'New'][Math.floor(Math.random() * 3)] as IncidentStatus;
 
-  // Simulate some resolved incidents for variety
   const isResolved = Math.random() < 0.2;
   const status = isResolved ? 'Resolved' : randomStatus;
 
-  // Simulate some incidents having pre-generated AI summaries for demo
   const hasGeneratedSummary = Math.random() < 0.3;
+
+  // Fictional coordinates around Thiruvananthapuram (approx 8.5° N, 76.9° E)
+  // Centered around: Lat 8.50, Lon 76.92
+  // Range: Lat [8.45, 8.55], Lon [8.87, 8.97] - careful, longitude was too far east previously
+  const baseLat = 8.50;
+  const baseLon = 76.91; // Adjusted to be more central Kerala
+  const latSpread = 0.05; // +/- 0.05 degrees latitude
+  const lonSpread = 0.05; // +/- 0.05 degrees longitude
 
   return {
     id: `inc-${incidentIdCounter}-${Date.now()}`,
@@ -68,8 +76,8 @@ export const generateMockIncident = (): Incident => {
     location: locations[Math.floor(Math.random() * locations.length)],
     timestamp: new Date(Date.now() - Math.floor(Math.random() * 600000)), // Within last 10 mins
     status: status,
-    latitude: 34.0522 + (Math.random() - 0.5) * 0.1, // Mock coordinates around LA
-    longitude: -118.2437 + (Math.random() - 0.5) * 0.1,
+    latitude: baseLat + (Math.random() - 0.5) * 2 * latSpread, 
+    longitude: baseLon + (Math.random() - 0.5) * 2 * lonSpread,
     cameraImage: `https://placehold.co/600x400.png?text=${encodeURIComponent(randomType)}`,
     initialAISystemAnalysis: initialAnalyses[Math.floor(Math.random() * initialAnalyses.length)],
     initialActionsTaken: initialActions[Math.floor(Math.random() * initialActions.length)],
