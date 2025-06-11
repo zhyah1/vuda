@@ -40,9 +40,8 @@ const IncidentReportModal: React.FC<IncidentReportModalProps> = ({ incident, isO
   }, [incident]);
 
   useEffect(() => {
-    // Scroll to bottom of chat messages when new messages are added
     if (chatScrollAreaRef.current) {
-      const scrollElement = chatScrollAreaRef.current.querySelector('div > div'); // Target the viewport div
+      const scrollElement = chatScrollAreaRef.current.querySelector('div > div'); 
       if (scrollElement) {
         scrollElement.scrollTop = scrollElement.scrollHeight;
       }
@@ -72,7 +71,7 @@ const IncidentReportModal: React.FC<IncidentReportModalProps> = ({ incident, isO
           initialAISystemAnalysis: incident.initialAISystemAnalysis,
           generatedSummary: incident.generatedSummary,
         },
-        chatHistory: chatMessages.map(msg => ({ sender: msg.sender, text: msg.text })), 
+        chatHistory: chatMessages.map(msg => ({ sender: msg.sender, text: msg.text })),
       };
 
       const result = await chatWithFeed(input);
@@ -120,86 +119,89 @@ const IncidentReportModal: React.FC<IncidentReportModalProps> = ({ incident, isO
         </DialogHeader>
         
         <ScrollArea className="flex-grow overflow-y-auto">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 p-4">
-            {/* Left Column: Video Feed Placeholder & Action Log */}
-            <div className="space-y-6 md:col-span-1">
-              <div>
-                <h3 className="text-lg font-semibold text-foreground mb-2">Camera Feed</h3>
-                <div className="aspect-video bg-muted rounded-md overflow-hidden relative border border-border">
-                  <Image 
-                    src={incident.cameraImage || "https://placehold.co/600x400.png"} 
-                    alt="Incident camera feed placeholder" 
-                    layout="fill"
-                    objectFit="cover"
-                    data-ai-hint="street security camera"
-                  />
+          <div className="p-4">
+            {/* Top Section: Camera Feed, Action Log, AI Analysis, Details */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+              {/* Left Column: Video Feed Placeholder & Action Log */}
+              <div className="space-y-6">
+                <div>
+                  <h3 className="text-lg font-semibold text-foreground mb-2">Camera Feed</h3>
+                  <div className="aspect-video bg-muted rounded-md overflow-hidden relative border border-border">
+                    <Image 
+                      src={incident.cameraImage || "https://placehold.co/600x400.png"} 
+                      alt="Incident camera feed placeholder" 
+                      layout="fill"
+                      objectFit="cover"
+                      data-ai-hint="street security camera"
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <h3 className="text-lg font-semibold text-foreground mb-2">Action Log</h3>
+                  <ScrollArea className="h-48 border border-border rounded-md p-3 bg-muted/30">
+                    {incident.actionLog && incident.actionLog.length > 0 ? (
+                      <ul className="space-y-2">
+                        {incident.actionLog.map((action, index) => (
+                          <li key={index} className="text-xs text-muted-foreground flex items-start">
+                            <CheckCircle className="h-3 w-3 text-success mr-2 mt-0.5 shrink-0" />
+                            <div>
+                              <span className="font-medium text-foreground/90">{action.timestamp}</span>: {action.description}
+                            </div>
+                          </li>
+                        ))}
+                      </ul>
+                    ) : (
+                      <p className="text-xs text-muted-foreground">No actions logged yet.</p>
+                    )}
+                  </ScrollArea>
                 </div>
               </div>
 
-              <div>
-                <h3 className="text-lg font-semibold text-foreground mb-2">Action Log</h3>
-                <ScrollArea className="h-48 border border-border rounded-md p-3 bg-muted/30">
-                  {incident.actionLog && incident.actionLog.length > 0 ? (
-                    <ul className="space-y-2">
-                      {incident.actionLog.map((action, index) => (
-                        <li key={index} className="text-xs text-muted-foreground flex items-start">
-                          <CheckCircle className="h-3 w-3 text-success mr-2 mt-0.5 shrink-0" />
-                          <div>
-                            <span className="font-medium text-foreground/90">{action.timestamp}</span>: {action.description}
-                          </div>
-                        </li>
-                      ))}
-                    </ul>
-                  ) : (
-                    <p className="text-xs text-muted-foreground">No actions logged yet.</p>
-                  )}
-                </ScrollArea>
-              </div>
-            </div>
-
-            {/* Middle Column: AI Analysis & Details */}
-            <div className="space-y-6 md:col-span-1">
-              <div>
-                <h3 className="text-lg font-semibold text-foreground mb-2 flex items-center">
-                  <Info className="h-5 w-5 mr-2 text-primary" />
-                  VUDA AI Analysis
-                </h3>
-                <div className="p-4 border border-border rounded-md bg-muted/30 min-h-[150px] text-sm">
-                  {isLoadingAiSummary ? (
-                    <div className="space-y-2">
-                      <Skeleton className="h-4 w-full" />
-                      <Skeleton className="h-4 w-full" />
-                      <Skeleton className="h-4 w-3/4" />
-                      <div className="flex justify-center items-center pt-4">
-                        <Loader2 className="h-6 w-6 animate-spin text-primary" />
-                        <p className="ml-2 text-sm text-muted-foreground">Generating summary...</p>
+              {/* Right Column: AI Analysis & Details */}
+              <div className="space-y-6">
+                <div>
+                  <h3 className="text-lg font-semibold text-foreground mb-2 flex items-center">
+                    <Info className="h-5 w-5 mr-2 text-primary" />
+                    VUDA AI Analysis
+                  </h3>
+                  <div className="p-4 border border-border rounded-md bg-muted/30 min-h-[150px] text-sm">
+                    {isLoadingAiSummary ? (
+                      <div className="space-y-2">
+                        <Skeleton className="h-4 w-full" />
+                        <Skeleton className="h-4 w-full" />
+                        <Skeleton className="h-4 w-3/4" />
+                        <div className="flex justify-center items-center pt-4">
+                          <Loader2 className="h-6 w-6 animate-spin text-primary" />
+                          <p className="ml-2 text-sm text-muted-foreground">Generating summary...</p>
+                        </div>
                       </div>
-                    </div>
-                  ) : incident.generatedSummary ? (
-                    <p className="text-foreground whitespace-pre-wrap">{incident.generatedSummary}</p>
-                  ) : (
-                    <div className="flex flex-col items-center justify-center h-full text-center">
-                       <AlertTriangle className="h-8 w-8 text-accent mb-2" />
-                      <p className="text-muted-foreground">AI summary not available or not yet generated for this incident.</p>
-                    </div>
-                  )}
+                    ) : incident.generatedSummary ? (
+                      <p className="text-foreground whitespace-pre-wrap">{incident.generatedSummary}</p>
+                    ) : (
+                      <div className="flex flex-col items-center justify-center h-full text-center">
+                         <AlertTriangle className="h-8 w-8 text-accent mb-2" />
+                        <p className="text-muted-foreground">AI summary not available or not yet generated for this incident.</p>
+                      </div>
+                    )}
+                  </div>
                 </div>
-              </div>
-              
-              <div>
-                <h3 className="text-lg font-semibold text-foreground mb-2">Incident Details</h3>
-                <div className="p-4 border border-border rounded-md bg-muted/30 text-sm">
-                  <p><span className="font-medium text-muted-foreground">Type:</span> {incident.type}</p>
-                  <p><span className="font-medium text-muted-foreground">Status:</span> {incident.status}</p>
-                  <p><span className="font-medium text-muted-foreground">Initial AI System Analysis:</span> {incident.initialAISystemAnalysis || "N/A"}</p>
-                  <p><span className="font-medium text-muted-foreground">Initial Actions Taken:</span> {incident.initialActionsTaken || "N/A"}</p>
+                
+                <div>
+                  <h3 className="text-lg font-semibold text-foreground mb-2">Incident Details</h3>
+                  <div className="p-4 border border-border rounded-md bg-muted/30 text-sm">
+                    <p><span className="font-medium text-muted-foreground">Type:</span> {incident.type}</p>
+                    <p><span className="font-medium text-muted-foreground">Status:</span> {incident.status}</p>
+                    <p><span className="font-medium text-muted-foreground">Initial AI System Analysis:</span> {incident.initialAISystemAnalysis || "N/A"}</p>
+                    <p><span className="font-medium text-muted-foreground">Initial Actions Taken:</span> {incident.initialActionsTaken || "N/A"}</p>
+                  </div>
                 </div>
               </div>
             </div>
 
-            {/* Right Column: Chat Interface */}
-            <div className="md:col-span-1 flex flex-col h-[calc(100vh-10rem)]">
-              <Card className="flex-grow flex flex-col shadow-md bg-card/80 border border-border">
+            {/* Bottom Section: Chat Interface */}
+            <div>
+              <Card className="flex flex-col shadow-md bg-card/80 border border-border h-[calc(50vh-5rem)] sm:h-[calc(40vh-4rem)] md:h-[calc(100vh-28rem)] max-h-[500px] min-h-[300px]"> {/* Adjusted height */}
                 <CardHeader className="p-3 border-b border-border">
                   <CardTitle className="text-base font-semibold flex items-center">
                     <MessageSquare className="h-5 w-5 mr-2 text-primary" />
@@ -275,3 +277,5 @@ const IncidentReportModal: React.FC<IncidentReportModalProps> = ({ incident, isO
 };
 
 export default IncidentReportModal;
+
+    
