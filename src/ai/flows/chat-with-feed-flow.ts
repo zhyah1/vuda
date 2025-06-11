@@ -30,14 +30,14 @@ const IncidentContextSchema = z.object({
     .describe('A previously AI-generated summary of the incident, if available.'),
 });
 
-export const ChatWithFeedInputSchema = z.object({
+const ChatWithFeedInputSchema = z.object({
   userQuestion: z.string().describe('The user_s current question about the incident.'),
   incidentContext: IncidentContextSchema.describe('The context of the incident being discussed.'),
   chatHistory: z.array(ChatMessageSchema).optional().describe('The recent history of the conversation.'),
 });
 export type ChatWithFeedInput = z.infer<typeof ChatWithFeedInputSchema>;
 
-export const ChatWithFeedOutputSchema = z.object({
+const ChatWithFeedOutputSchema = z.object({
   aiResponse: z.string().describe('The AI_s response to the user_s question based on the provided context and history.'),
 });
 export type ChatWithFeedOutput = z.infer<typeof ChatWithFeedOutputSchema>;
@@ -48,7 +48,7 @@ export async function chatWithFeed(input: ChatWithFeedInput): Promise<ChatWithFe
 
 const prompt = ai.definePrompt({
   name: 'chatWithFeedPrompt',
-  model: 'googleai/gemini-2.0-flash', 
+  model: 'googleai/gemini-2.0-flash',
   input: {schema: ChatWithFeedInputSchema},
   output: {schema: ChatWithFeedOutputSchema},
   prompt: `You are a helpful AI assistant for the VUDA Public Safety Platform. You are interacting with an operator viewing an incident report.
