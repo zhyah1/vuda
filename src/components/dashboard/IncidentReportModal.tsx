@@ -19,10 +19,6 @@ interface IncidentReportModalProps {
 const IncidentReportModal: React.FC<IncidentReportModalProps> = ({ incident, isOpen, onClose, isLoadingAiSummary }) => {
   if (!incident) return null;
 
-  const youtubeEmbedUrl = incident.youtubeVideoId 
-    ? `https://www.youtube.com/embed/${incident.youtubeVideoId}?autoplay=1&mute=1&modestbranding=1&rel=0` 
-    : null;
-
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="fixed top-0 left-0 w-screen h-screen max-w-none sm:rounded-none translate-x-0 translate-y-0 flex flex-col bg-background border-0 shadow-2xl p-0">
@@ -40,24 +36,13 @@ const IncidentReportModal: React.FC<IncidentReportModalProps> = ({ incident, isO
               <div>
                 <h3 className="text-lg font-semibold text-foreground mb-2">Camera Feed</h3>
                 <div className="aspect-video bg-muted rounded-md overflow-hidden relative border border-border">
-                  {youtubeEmbedUrl ? (
-                    <iframe
-                      src={youtubeEmbedUrl}
-                      title="Incident Video Feed"
-                      frameBorder="0"
-                      allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
-                      allowFullScreen
-                      className="w-full h-full"
-                    ></iframe>
-                  ) : (
-                    <Image 
-                      src={incident.cameraImage || "https://placehold.co/600x400.png"} 
-                      alt="Incident camera feed placeholder" 
-                      layout="fill"
-                      objectFit="cover"
-                      data-ai-hint="street security camera"
-                    />
-                  )}
+                  <Image 
+                    src={incident.cameraImage || "https://placehold.co/600x400.png"} 
+                    alt="Incident camera feed placeholder" 
+                    layout="fill"
+                    objectFit="cover"
+                    data-ai-hint="street security camera"
+                  />
                 </div>
               </div>
 

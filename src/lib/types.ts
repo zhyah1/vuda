@@ -1,3 +1,4 @@
+
 export type IncidentStatus = 'Critical' | 'Warning' | 'Resolved' | 'New';
 export type IncidentType = 
   | 'Violent Crime' 
@@ -22,7 +23,6 @@ export interface Incident {
   latitude: number; 
   longitude: number;
   cameraImage?: string; 
-  youtubeVideoId?: string; // Added for embedding YouTube videos
   initialAISystemAnalysis?: string;
   initialActionsTaken?: string;
   generatedSummary?: string;

@@ -7,7 +7,12 @@ const titles: Record<IncidentType, string[]> = {
   'Fire Alert': ['Smoke Detected in Building', 'Structure Fire Reported', 'Vehicle Fire'],
   'Traffic Accident': ['Multi-vehicle Collision', 'Pedestrian Struck', 'Road Blockage Major Intersection'],
   'Suspicious Activity': ['Loitering Detected', 'Unattended Package', 'Trespassing Alert'],
-  'Public Safety Threat': ['Large Crowd Forming', 'Vandalism Spree', 'Potential Riot Conditions', 'Street Fight Erupting', 'Abnormal Crowd Movement', 'Panic Detected in Crowd', 'Developing Unrest', 'Sudden Crowd Dispersal'],
+  'Public Safety Threat': [
+    'Large Crowd Forming', 'Vandalism Spree', 'Potential Riot Conditions', 
+    'Street Fight Erupting', 'Abnormal Crowd Movement', 'Panic Detected in Crowd', 
+    'Developing Unrest', 'Sudden Crowd Dispersal', 'Crowd Stampede Imminent', 
+    'Unlawful Assembly Escalating', 'Public Panic Spreading'
+  ],
 };
 
 const locations: string[] = [
@@ -48,6 +53,9 @@ const initialAnalyses: Record<IncidentType, string[]> = {
     "AI analysis indicates rapid crowd convergence at Parliament St. Potential for civil unrest. (Detected Anomalies: Unlawful_Assembly, Crowd_Gathering_Speed)",
     "Multiple camera feeds show coordinated movement of individuals forming a blockade on a major thoroughfare. (Detected Anomalies: Road_Blockage_Intentional, Protest_Activity)",
     "Automated systems detect increasing crowd density and agitation levels near City Hall. Potential for stampede. (Detected Anomalies: Crowd_Density_High, Crowd_Agitation_Level_Rising, Stampede_Risk)",
+    "AI analysis: Crowd near City Hall exhibiting panic behavior; rapid, uncontrolled movement. (Detected Anomalies: Crowd_Stampede, Public_Panic, Multiple_Persons_Down)",
+    "Thermal and motion analysis show high-density crowd surging towards exits. (Detected Anomalies: Crowd_Surge, Stampede_Risk, Emergency_Exit_Blocked)",
+    "Reports of shots fired leading to widespread panic and crowd stampede downtown. (Detected Anomalies: Active_Shooter, Crowd_Stampede, Mass_Casualty_Event)",
   ]
 };
 
@@ -84,15 +92,6 @@ const actionLogSamples: IncidentAction[][] = [
     { timestamp: "18:46:00", description: "PA System Activated with Dispersal Instructions" },
   ]
 ];
-
-// Sample YouTube video IDs (replace with actual relevant, safe videos)
-const sampleYoutubeVideoIds: string[] = [
-  "hnpQrQuT7v0", // Example: AI in Smart Cities (Placeholder)
-  "3tmd-ClpJxA", // Example: Public Safety Technology (Placeholder)
-  "s2skans2dP0", // Example: Urban Analytics (Placeholder)
-  "eVs-BqC_L9k" // Example: Smart City Surveillance (Placeholder)
-];
-
 
 let incidentIdCounter = 0;
 
@@ -135,11 +134,6 @@ export const generateMockIncident = (): Incident => {
 
   const chosenActionLog = actionLogSamples[Math.floor(Math.random() * actionLogSamples.length)];
 
-  // Randomly assign a YouTube video ID to about 30% of incidents
-  const youtubeVideoId = Math.random() < 0.3 
-    ? sampleYoutubeVideoIds[Math.floor(Math.random() * sampleYoutubeVideoIds.length)] 
-    : undefined;
-
   return {
     id: `inc-${incidentIdCounter}-${Date.now()}`,
     type: randomType,
@@ -150,7 +144,6 @@ export const generateMockIncident = (): Incident => {
     latitude: baseLat + (Math.random() - 0.5) * 2 * latSpread, 
     longitude: baseLon + (Math.random() - 0.5) * 2 * lonSpread,
     cameraImage: `https://placehold.co/600x400.png?text=${encodeURIComponent(randomType.replace(/\s/g, '+'))}`,
-    youtubeVideoId: youtubeVideoId,
     initialAISystemAnalysis: chosenAnalysis,
     initialActionsTaken: initialActions[Math.floor(Math.random() * initialActions.length)],
     generatedSummary: hasGeneratedSummary ? `AI-generated summary: ${chosenAnalysis.substring(0,100)}... Further details are being processed.` : undefined,
