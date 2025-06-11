@@ -7,17 +7,15 @@ const titles: Record<IncidentType, string[]> = {
   'Fire Alert': ['Smoke Detected in Building', 'Structure Fire Reported', 'Vehicle Fire'],
   'Traffic Accident': ['Multi-vehicle Collision', 'Pedestrian Struck', 'Road Blockage Major Intersection'],
   'Suspicious Activity': ['Loitering Detected', 'Unattended Package', 'Trespassing Alert'],
-  'Public Safety Threat': ['Large Crowd Forming', 'Vandalism Spree', 'Potential Riot Conditions', 'Street Fight Erupting', 'Abnormal Crowd Movement', 'Panic Detected in Crowd'],
+  'Public Safety Threat': ['Large Crowd Forming', 'Vandalism Spree', 'Potential Riot Conditions', 'Street Fight Erupting', 'Abnormal Crowd Movement', 'Panic Detected in Crowd', 'Developing Unrest', 'Sudden Crowd Dispersal'],
 };
 
-// Updated locations for Thiruvananthapuram (fictional context)
 const locations: string[] = [
   'Technopark Phase 1', 'East Fort Junction', 'Kowdiar Avenue',
   'Pattom Main Road', 'Shanghumugham Beach Rd', 'Statue Junction',
   'Medical College Campus', 'Museum Road', 'Peroorkada Market', 'Ulloor Crossing', 'Central Stadium Entrance', 'Railway Station Concourse'
 ];
 
-// Updated initialAnalyses to reflect AI video understanding with anomaly tags
 const initialAnalyses: Record<IncidentType, string[]> = {
   'Violent Crime': [
     "Video feed shows two individuals in a physical altercation near the ATM. One individual pushed the other to the ground. (Detected Anomalies: Physical_Assault, Fighting)",
@@ -47,6 +45,9 @@ const initialAnalyses: Record<IncidentType, string[]> = {
     "Group of individuals involved in a large street brawl near market. (Detected Anomalies: Fighting, Public_Disturbance, Weapon_Visible)",
     "Dense crowd observed at transit hub exhibiting unusual surge patterns. (Detected Anomalies: Crowd_Surge, Potential_Crush_Hazard)",
     "AI detects sounds of screaming and rapid movement in a crowded plaza. (Detected Anomalies: Public_Panic, Possible_Threat_Unseen, Crowd_Dispersion)",
+    "AI analysis indicates rapid crowd convergence at Parliament St. Potential for civil unrest. (Detected Anomalies: Unlawful_Assembly, Crowd_Gathering_Speed)",
+    "Multiple camera feeds show coordinated movement of individuals forming a blockade on a major thoroughfare. (Detected Anomalies: Road_Blockage_Intentional, Protest_Activity)",
+    "Automated systems detect increasing crowd density and agitation levels near City Hall. Potential for stampede. (Detected Anomalies: Crowd_Density_High, Crowd_Agitation_Level_Rising, Stampede_Risk)",
   ]
 };
 
@@ -84,6 +85,14 @@ const actionLogSamples: IncidentAction[][] = [
   ]
 ];
 
+// Sample YouTube video IDs (replace with actual relevant, safe videos)
+const sampleYoutubeVideoIds: string[] = [
+  "hnpQrQuT7v0", // Example: AI in Smart Cities (Placeholder)
+  "3tmd-ClpJxA", // Example: Public Safety Technology (Placeholder)
+  "s2skans2dP0", // Example: Urban Analytics (Placeholder)
+  "eVs-BqC_L9k" // Example: Smart City Surveillance (Placeholder)
+];
+
 
 let incidentIdCounter = 0;
 
@@ -96,15 +105,13 @@ const incidentTypes: IncidentType[] = [
   'Public Safety Threat'
 ];
 
-// Give higher weight to Public Safety Threat and Traffic Accident
 const preferredIncidentTypes: IncidentType[] = ['Public Safety Threat', 'Traffic Accident'];
 
 export const generateMockIncident = (): Incident => {
   incidentIdCounter++;
   
   let randomType: IncidentType;
-  // Increase probability for preferred types
-  if (Math.random() < 0.6) { // 60% chance to pick a preferred type (increased from 0.5)
+  if (Math.random() < 0.6) { 
     randomType = preferredIncidentTypes[Math.floor(Math.random() * preferredIncidentTypes.length)];
   } else {
     const nonPreferredTypes = incidentTypes.filter(type => !preferredIncidentTypes.includes(type));
@@ -113,7 +120,7 @@ export const generateMockIncident = (): Incident => {
   
   const randomStatus = ['Critical', 'Warning', 'New'][Math.floor(Math.random() * 3)] as IncidentStatus;
 
-  const isResolved = Math.random() < 0.1; // Lower chance of being resolved for new incidents
+  const isResolved = Math.random() < 0.1; 
   const status = isResolved ? 'Resolved' : randomStatus;
 
   const hasGeneratedSummary = Math.random() < 0.3;
@@ -128,16 +135,22 @@ export const generateMockIncident = (): Incident => {
 
   const chosenActionLog = actionLogSamples[Math.floor(Math.random() * actionLogSamples.length)];
 
+  // Randomly assign a YouTube video ID to about 30% of incidents
+  const youtubeVideoId = Math.random() < 0.3 
+    ? sampleYoutubeVideoIds[Math.floor(Math.random() * sampleYoutubeVideoIds.length)] 
+    : undefined;
+
   return {
     id: `inc-${incidentIdCounter}-${Date.now()}`,
     type: randomType,
     title: titles[randomType][Math.floor(Math.random() * titles[randomType].length)],
     location: locations[Math.floor(Math.random() * locations.length)],
-    timestamp: new Date(Date.now() - Math.floor(Math.random() * 300000)), // Within last 5 mins for more "live" feel
+    timestamp: new Date(Date.now() - Math.floor(Math.random() * 300000)), 
     status: status,
     latitude: baseLat + (Math.random() - 0.5) * 2 * latSpread, 
     longitude: baseLon + (Math.random() - 0.5) * 2 * lonSpread,
     cameraImage: `https://placehold.co/600x400.png?text=${encodeURIComponent(randomType.replace(/\s/g, '+'))}`,
+    youtubeVideoId: youtubeVideoId,
     initialAISystemAnalysis: chosenAnalysis,
     initialActionsTaken: initialActions[Math.floor(Math.random() * initialActions.length)],
     generatedSummary: hasGeneratedSummary ? `AI-generated summary: ${chosenAnalysis.substring(0,100)}... Further details are being processed.` : undefined,
@@ -154,4 +167,3 @@ export const getInitialMockIncidents = (): Incident[] => {
   return Array.from({ length: INITIAL_INCIDENTS_COUNT }, generateMockIncident)
     .sort((a, b) => b.timestamp.getTime() - a.timestamp.getTime());
 };
-
