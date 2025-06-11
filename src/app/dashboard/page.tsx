@@ -13,6 +13,8 @@ import { generateMockIncident, getInitialMockIncidents, INITIAL_INCIDENTS_COUNT 
 import { generateIncidentSummary, type GenerateIncidentSummaryInput } from '@/ai/flows/summarize-incident';
 import { useToast } from "@/hooks/use-toast";
 import { format } from 'date-fns';
+import { ShieldAlert, AlertTriangle, Bell } from 'lucide-react';
+import { cn } from '@/lib/utils';
 
 const DEPARTMENTS_LIST = ['Police', 'Fireforce', 'MVD', 'EMS', 'Disaster Management', 'Event Security', 'City Transit Authority', 'Public Works', 'Animal Control'];
 
@@ -33,13 +35,31 @@ export default function DashboardPage() {
     setActiveIncidentsCount(count);
   }, [incidents]);
 
+  const getToastIcon = (status: Incident['status']): React.ReactNode => {
+    switch (status) {
+      case 'Critical':
+        return <ShieldAlert className="h-5 w-5 text-destructive-foreground" />;
+      case 'Warning':
+        return <AlertTriangle className="h-5 w-5 text-accent" />;
+      case 'New':
+        return <Bell className="h-5 w-5 text-primary" />;
+      default:
+        return <Bell className="h-5 w-5 text-primary" />;
+    }
+  };
+
   useEffect(() => {
     const interval = setInterval(() => {
       const newIncident = generateMockIncident();
       setIncidents(prevIncidents => [newIncident, ...prevIncidents].slice(0, 50)); 
        if (newIncident.status !== 'Resolved') {
         toast({
-          title: `New Alert: ${newIncident.title}`,
+          title: (
+            <div className="flex items-center gap-2">
+              {getToastIcon(newIncident.status)}
+              <span>New Alert: {newIncident.title}</span>
+            </div>
+          ),
           description: `${newIncident.location}`,
           variant: newIncident.status === 'Critical' ? 'destructive' : 'default',
         });
