@@ -20,6 +20,11 @@ const cameraLocations = [
   { id: 'cam3', name: 'Kowdiar Palace View', lat: 8.515, lon: 76.945 },
   { id: 'cam4', name: 'Shanghumugham Beach Front', lat: 8.479, lon: 76.907 },
   { id: 'cam5', name: 'Pattom Central', lat: 8.518, lon: 76.920 },
+  { id: 'cam6', name: 'Kazhakootam Junction', lat: 8.568, lon: 76.873 },
+  { id: 'cam7', name: 'Museum Complex', lat: 8.508, lon: 76.952 },
+  { id: 'cam8', name: 'Thampanoor Railway Station', lat: 8.488, lon: 76.950 },
+  { id: 'cam9', name: 'Secretariat North Gate', lat: 8.495, lon: 76.945 },
+  { id: 'cam10', name: 'Vellayambalam Square', lat: 8.511, lon: 76.958 },
 ];
 
 const mapContainerStyle = {
@@ -33,6 +38,36 @@ const center = {
   lng: 76.9366  // Longitude for Thiruvananthapuram
 };
 
+const getMarkerIconUrl = (incident?: Incident): string => {
+  const criticalColorHex = 'E53E3E'; // Destructive Red from HSL(0, 72%, 51%)
+  const warningColorHex = 'FFBF00';   // Accent Amber from HSL(45, 100%, 50%)
+  const newColorHex = '19F4E8';       // Primary Teal from HSL(183, 100%, 55%)
+  const defaultCameraColorHex = '19F4E8'; // Primary Teal for normal cameras
+
+  if (incident && incident.status !== 'Resolved') {
+    let fillColor = newColorHex; 
+    let strokeColor = newColorHex;
+
+    switch (incident.status) {
+      case 'Critical':
+        fillColor = criticalColorHex;
+        strokeColor = criticalColorHex;
+        break;
+      case 'Warning':
+        fillColor = warningColorHex;
+        strokeColor = warningColorHex;
+        break;
+      // 'New' uses newColorHex by default
+    }
+    // Active incident marker: filled inner circle, same color stroke outer circle
+    return `data:image/svg+xml,${encodeURIComponent(`<svg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='%23${strokeColor}' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><circle cx='12' cy='12' r='10'></circle><circle cx='12' cy='12' r='4' fill='%23${fillColor}'></circle></svg>`)}`;
+  }
+  
+  // Default camera icon (no active, non-resolved incident)
+  return `data:image/svg+xml,${encodeURIComponent(`<svg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='%23${defaultCameraColorHex}' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><circle cx='12' cy='12' r='6' fill='%23${defaultCameraColorHex}' fill-opacity='0.3'></circle><circle cx='12' cy='12' r='2' fill='%23${defaultCameraColorHex}'></circle></svg>`)}`;
+};
+
+
 const CityMap: React.FC<CityMapProps> = ({ incidents }) => {
   const { isLoaded, loadError } = useJsApiLoader({
     id: 'google-map-script',
@@ -45,9 +80,8 @@ const CityMap: React.FC<CityMapProps> = ({ incidents }) => {
     const activeIncidentAtCamera = incidents.find(
       (inc) => 
       inc.status !== 'Resolved' &&
-      // Looser matching for incidents to camera locations
-      Math.abs(inc.latitude - camera.lat) < 0.005 && 
-      Math.abs(inc.longitude - camera.lon) < 0.005 
+      Math.abs(inc.latitude - camera.lat) < 0.01 && // Looser matching for demo
+      Math.abs(inc.longitude - camera.lon) < 0.01 
     );
     setSelectedCamera({ ...camera, incident: activeIncidentAtCamera });
   }, [incidents]);
@@ -57,21 +91,18 @@ const CityMap: React.FC<CityMapProps> = ({ incidents }) => {
   }, []);
 
   const memoizedMarkers = useMemo(() => {
-    if (!isLoaded) { // Ensure isLoaded before accessing window.google
+    if (!isLoaded) { 
       return []; 
     }
     return cameraLocations.map((camera) => {
       const activeIncidentAtCamera = incidents.find(
         (inc) => 
         inc.status !== 'Resolved' &&
-        Math.abs(inc.latitude - camera.lat) < 0.005 && 
-        Math.abs(inc.longitude - camera.lon) < 0.005
+        Math.abs(inc.latitude - camera.lat) < 0.01 && 
+        Math.abs(inc.longitude - camera.lon) < 0.01
       );
-      const isAlert = !!activeIncidentAtCamera;
       
-      const iconUrl = isAlert ? 
-        "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='%23E53E3E' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Ccircle cx='12' cy='12' r='10'%3E%3C/circle%3E%3Ccircle cx='12' cy='12' r='4' fill='%23E53E3E'%3E%3C/circle%3E%3C/svg%3E"
-        : "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='%2319F4E8' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Ccircle cx='12' cy='12' r='6' fill='%2319F4E8' fill-opacity='0.3'%3E%3C/circle%3E%3Ccircle cx='12' cy='12' r='2' fill='%2319F4E8'%3E%3C/circle%3E%3C/svg%3E";
+      const iconUrl = getMarkerIconUrl(activeIncidentAtCamera);
 
       return (
         <Marker
@@ -79,11 +110,11 @@ const CityMap: React.FC<CityMapProps> = ({ incidents }) => {
           position={{ lat: camera.lat, lng: camera.lon }}
           onClick={() => handleMarkerClick(camera)}
           title={camera.name}
-          icon={{
+          icon={isLoaded ? { // Ensure window.google.maps is available
             url: iconUrl,
             scaledSize: new window.google.maps.Size(20, 20),
             anchor: new window.google.maps.Point(10, 10),
-          }}
+          } : undefined}
         />
       );
     });
@@ -144,14 +175,14 @@ const CityMap: React.FC<CityMapProps> = ({ incidents }) => {
             <InfoWindow
               position={{ lat: selectedCamera.lat, lng: selectedCamera.lon }}
               onCloseClick={() => setSelectedCamera(null)}
-              options={{ pixelOffset: new window.google.maps.Size(0, -25) }}
+              options={isLoaded ? { pixelOffset: new window.google.maps.Size(0, -25) } : undefined}
             >
-              <div className="p-1 bg-popover text-popover-foreground rounded-md shadow-lg max-w-xs">
+              <div className="p-2 bg-popover text-popover-foreground rounded-md shadow-lg max-w-xs">
                 <h4 className="text-sm font-semibold mb-1">{selectedCamera.name}</h4>
                 {selectedCamera.incident ? (
                   <div>
                     <p className="text-xs text-destructive font-medium">Active Alert:</p>
-                    <p className="text-xs text-muted-foreground">{selectedCamera.incident.title}</p>
+                    <p className="text-xs font-semibold">{selectedCamera.incident.title}</p>
                   </div>
                 ) : (
                   <p className="text-xs text-muted-foreground">No active alerts.</p>
