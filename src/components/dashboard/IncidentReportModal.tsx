@@ -1,3 +1,4 @@
+
 'use client';
 import type React from 'react';
 import Image from 'next/image';
@@ -20,15 +21,15 @@ const IncidentReportModal: React.FC<IncidentReportModalProps> = ({ incident, isO
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-2xl max-h-[90vh] flex flex-col bg-background border-border shadow-2xl">
-        <DialogHeader className="p-4 border-b border-border">
+      <DialogContent className="fixed top-0 left-0 w-screen h-screen max-w-none sm:rounded-none translate-x-0 translate-y-0 flex flex-col bg-background border-0 shadow-2xl p-0">
+        <DialogHeader className="p-4 border-b border-border flex-shrink-0">
           <DialogTitle className="text-xl font-semibold text-primary">{incident.title}</DialogTitle>
           <DialogDescription className="text-sm text-muted-foreground">
             {incident.location} - {new Date(incident.timestamp).toLocaleString()}
           </DialogDescription>
         </DialogHeader>
         
-        <ScrollArea className="flex-grow overflow-y-auto p-1">
+        <ScrollArea className="flex-grow overflow-y-auto">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6 p-4">
             {/* Left Column: Video Feed Placeholder & Action Log */}
             <div className="space-y-6">
@@ -110,7 +111,7 @@ const IncidentReportModal: React.FC<IncidentReportModalProps> = ({ incident, isO
           </div>
         </ScrollArea>
 
-        <DialogFooter className="p-4 border-t border-border">
+        <DialogFooter className="p-4 border-t border-border flex-shrink-0">
           <Button variant="outline" onClick={onClose}>Close</Button>
         </DialogFooter>
       </DialogContent>
