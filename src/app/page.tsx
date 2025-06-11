@@ -31,7 +31,7 @@ export default function LandingPage() {
                     Welcome to VUDA
                 </h1>
                 <p className="text-xl md:text-2xl text-muted-foreground mb-10 max-w-3xl mx-auto">
-                    What if every security camera could not just see, but understand and act? Introducing VUDA—the AI platform that transforms passive video feeds into an active public safety net.
+                    Imagine every security camera not just recording, but understanding and acting. VUDA is the AI platform transforming passive video feeds into a proactive public safety network.
                 </p>
                 <Link href="/dashboard">
                     <Button size="lg" className="bg-primary text-primary-foreground hover:bg-primary/90 shadow-lg transform hover:scale-105 transition-transform duration-300">
@@ -61,9 +61,9 @@ export default function LandingPage() {
         {/* Features Section */}
         <section className="bg-background py-16 md:py-24">
           <div className="container mx-auto px-6 text-center">
-            <h2 className="text-3xl md:text-4xl font-semibold mb-4 text-foreground">Key Features Powering Safer Cities</h2>
+            <h2 className="text-3xl md:text-4xl font-semibold mb-4 text-foreground">The VUDA Advantage</h2>
             <p className="text-lg text-muted-foreground mb-16 max-w-2xl mx-auto">
-              Using real-time Video Understanding and Descriptive Analytics, VUDA detects threats and automatically triggers life-saving responses.
+              VUDA leverages cutting-edge Video Understanding and Descriptive Analytics to detect threats in real-time, initiating automated, life-saving responses.
             </p>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-8 md:gap-12">
               <div className="p-8 rounded-xl border border-border bg-card shadow-xl hover:shadow-primary/20 transition-shadow duration-300 transform hover:-translate-y-2">
@@ -71,28 +71,25 @@ export default function LandingPage() {
                     <ShieldCheck className="h-12 w-12 text-primary"/>
                 </div>
                 <h3 className="text-2xl font-semibold mb-4 text-primary">Real-Time Threat Detection</h3>
-                <p className="text-muted-foreground">VUDA continuously analyzes video feeds, detecting a wide range of threats from violent crimes to medical emergencies and public safety incidents.</p>
+                <p className="text-muted-foreground">VUDA continuously analyzes video feeds, identifying a comprehensive range of threats—from violent crimes and medical emergencies to public safety incidents and infrastructure anomalies.</p>
               </div>
               <div className="p-8 rounded-xl border border-border bg-card shadow-xl hover:shadow-primary/20 transition-shadow duration-300 transform hover:-translate-y-2">
                 <div className="flex justify-center mb-4">
                     <Activity className="h-12 w-12 text-primary"/>
                 </div>
                 <h3 className="text-2xl font-semibold mb-4 text-primary">Automated Intelligent Response</h3>
-                <p className="text-muted-foreground">It doesn’t just alert; VUDA analyzes context, automatically dispatches first responders, and ensures rapid, informed action.</p>
+                <p className="text-muted-foreground">Beyond alerts, VUDA analyzes incident context to automatically dispatch first responders, coordinate actions, and ensure rapid, informed interventions.</p>
               </div>
               <div className="p-8 rounded-xl border border-border bg-card shadow-xl hover:shadow-primary/20 transition-shadow duration-300 transform hover:-translate-y-2">
                 <div className="flex justify-center mb-4">
                     <BrainCircuit className="h-12 w-12 text-primary"/>
                 </div>
                 <h3 className="text-2xl font-semibold mb-4 text-primary">AI-Synthesized Reporting</h3>
-                <p className="text-muted-foreground">Provides emergency services with concise, AI-generated reports and insights, guiding them for effective decision-making.</p>
+                <p className="text-muted-foreground">Delivers concise, AI-generated incident reports and actionable insights directly to emergency services, enhancing situational awareness and decision-making.</p>
               </div>
             </div>
             <p className="text-xl text-primary mt-16 font-semibold">
-              The future of safety isn’t just watching—it’s understanding. Let’s make your streets smarter.
-            </p>
-             <p className="text-md text-muted-foreground mt-4">
-              Cities using VUDA have seen emergency response times drop by 70% and false alarms slashed by half.
+              VUDA is redefining urban safety. Cities deploying our platform experience an average 70% reduction in emergency response times and a 50% decrease in false alarms. The future of safety isn’t just watching—it’s understanding.
             </p>
           </div>
         </section>
@@ -117,4 +114,3 @@ export default function LandingPage() {
     </div>
   );
 }
-
