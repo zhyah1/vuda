@@ -7,14 +7,14 @@ const titles: Record<IncidentType, string[]> = {
   'Fire Alert': ['Smoke Detected in Building', 'Structure Fire Reported', 'Vehicle Fire'],
   'Traffic Accident': ['Multi-vehicle Collision', 'Pedestrian Struck', 'Road Blockage Major Intersection'],
   'Suspicious Activity': ['Loitering Detected', 'Unattended Package', 'Trespassing Alert'],
-  'Public Safety Threat': ['Large Crowd Forming', 'Vandalism Spree', 'Potential Riot Conditions', 'Street Fight Erupting'],
+  'Public Safety Threat': ['Large Crowd Forming', 'Vandalism Spree', 'Potential Riot Conditions', 'Street Fight Erupting', 'Abnormal Crowd Movement', 'Panic Detected in Crowd'],
 };
 
 // Updated locations for Thiruvananthapuram (fictional context)
 const locations: string[] = [
   'Technopark Phase 1', 'East Fort Junction', 'Kowdiar Avenue',
   'Pattom Main Road', 'Shanghumugham Beach Rd', 'Statue Junction',
-  'Medical College Campus', 'Museum Road', 'Peroorkada Market', 'Ulloor Crossing'
+  'Medical College Campus', 'Museum Road', 'Peroorkada Market', 'Ulloor Crossing', 'Central Stadium Entrance', 'Railway Station Concourse'
 ];
 
 // Updated initialAnalyses to reflect AI video understanding with anomaly tags
@@ -41,10 +41,12 @@ const initialAnalyses: Record<IncidentType, string[]> = {
     "Individual seen scaling the perimeter fence of the restricted power substation. (Detected Anomalies: Unauthorized_Access, Trespassing_Alert)",
   ],
   'Public Safety Threat': [
-    "Large, agitated crowd forming at City Center. Objects thrown. (Detected Anomalies: Riots_Or_Protest_Violence, Unlawful_Assembly)",
+    "Large, agitated crowd forming at City Center. Objects thrown. (Detected Anomalies: Riots_Or_Protest_Violence, Unlawful_Assembly, Crowd_Agitation)",
     "Multiple individuals breaking shop windows on Main Street. (Detected Anomalies: Vandalism_In_Progress, Property_Damage)",
-    "Reports of panicked crowd movement near transit station. (Detected Anomalies: Crowd_Stampede, Public_Panic)",
-    "Group of individuals involved in a large street brawl. (Detected Anomalies: Fighting, Public_Disturbance, Weapon_Visible)"
+    "Video shows a sudden, rapid dispersal of a large crowd at the stadium exit. Multiple people have fallen. (Detected Anomalies: Crowd_Stampede, Public_Panic, Person_Down)",
+    "Group of individuals involved in a large street brawl near market. (Detected Anomalies: Fighting, Public_Disturbance, Weapon_Visible)",
+    "Dense crowd observed at transit hub exhibiting unusual surge patterns. (Detected Anomalies: Crowd_Surge, Potential_Crush_Hazard)",
+    "AI detects sounds of screaming and rapid movement in a crowded plaza. (Detected Anomalies: Public_Panic, Possible_Threat_Unseen, Crowd_Dispersion)",
   ]
 };
 
@@ -54,7 +56,9 @@ const initialActions: string[] = [
   "Local police patrol notified via automated alert.",
   "Emergency medical services pre-alerted.",
   "Traffic management system rerouting vehicles.",
-  "Security drone dispatched for aerial surveillance."
+  "Security drone dispatched for aerial surveillance.",
+  "Crowd dispersal advisory broadcast via PA system.",
+  "Additional units requested for crowd control."
 ];
 
 const actionLogSamples: IncidentAction[][] = [
@@ -70,6 +74,13 @@ const actionLogSamples: IncidentAction[][] = [
     { timestamp: "08:15:35", description: "Vitals Transmitted: Abnormal Heart Rate" },
     { timestamp: "08:15:40", description: "EMS Dispatched to Location" },
     { timestamp: "08:16:00", description: "Emergency Contact Notified by AI" },
+  ],
+  [
+    { timestamp: "18:45:10", description: "Crowd Anomaly Detected: Rapid Condensation" },
+    { timestamp: "18:45:15", description: "AI Analysis: Potential Stampede Risk at Event Exit" },
+    { timestamp: "18:45:20", description: "Alert Sent to Event Security Command" },
+    { timestamp: "18:45:30", description: "Nearby Patrols Re-routed to Location" },
+    { timestamp: "18:46:00", description: "PA System Activated with Dispersal Instructions" },
   ]
 ];
 
@@ -93,7 +104,7 @@ export const generateMockIncident = (): Incident => {
   
   let randomType: IncidentType;
   // Increase probability for preferred types
-  if (Math.random() < 0.5) { // 50% chance to pick a preferred type
+  if (Math.random() < 0.6) { // 60% chance to pick a preferred type (increased from 0.5)
     randomType = preferredIncidentTypes[Math.floor(Math.random() * preferredIncidentTypes.length)];
   } else {
     const nonPreferredTypes = incidentTypes.filter(type => !preferredIncidentTypes.includes(type));
@@ -115,6 +126,8 @@ export const generateMockIncident = (): Incident => {
   const specificAnalyses = initialAnalyses[randomType];
   const chosenAnalysis = specificAnalyses[Math.floor(Math.random() * specificAnalyses.length)];
 
+  const chosenActionLog = actionLogSamples[Math.floor(Math.random() * actionLogSamples.length)];
+
   return {
     id: `inc-${incidentIdCounter}-${Date.now()}`,
     type: randomType,
@@ -128,16 +141,17 @@ export const generateMockIncident = (): Incident => {
     initialAISystemAnalysis: chosenAnalysis,
     initialActionsTaken: initialActions[Math.floor(Math.random() * initialActions.length)],
     generatedSummary: hasGeneratedSummary ? `AI-generated summary: ${chosenAnalysis.substring(0,100)}... Further details are being processed.` : undefined,
-    actionLog: actionLogSamples[Math.floor(Math.random() * actionLogSamples.length)].map(action => ({
+    actionLog: chosenActionLog.map(action => ({
       ...action,
       timestamp: `${new Date().getHours().toString().padStart(2, '0')}:${(new Date().getMinutes() - Math.floor(Math.random()*5)).toString().padStart(2, '0')}:${new Date().getSeconds().toString().padStart(2, '0')}`
     })),
   };
 };
 
-export const INITIAL_INCIDENTS_COUNT = 7; // Slightly increased for more variety with new type
+export const INITIAL_INCIDENTS_COUNT = 7; 
 
 export const getInitialMockIncidents = (): Incident[] => {
   return Array.from({ length: INITIAL_INCIDENTS_COUNT }, generateMockIncident)
     .sort((a, b) => b.timestamp.getTime() - a.timestamp.getTime());
 };
+
