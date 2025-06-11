@@ -13,6 +13,13 @@ export interface IncidentAction {
   description: string;
 }
 
+export interface ChatMessage {
+  id: string;
+  sender: 'user' | 'ai';
+  text: string;
+  timestamp: Date;
+}
+
 export interface Incident {
   id: string;
   type: IncidentType;
@@ -27,4 +34,5 @@ export interface Incident {
   initialActionsTaken?: string;
   generatedSummary?: string;
   actionLog?: IncidentAction[];
+  chatHistory?: ChatMessage[]; // Optional: To store chat history if needed persistently
 }

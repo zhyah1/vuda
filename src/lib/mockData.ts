@@ -1,5 +1,5 @@
 
-import type { Incident, IncidentType, IncidentStatus, IncidentAction } from './types';
+import type { Incident, IncidentType, IncidentStatus, IncidentAction, ChatMessage } from './types';
 
 const titles: Record<IncidentType, string[]> = {
   'Violent Crime': ['Assault Reported', 'Robbery in Progress', 'Public Disturbance'],
@@ -133,6 +133,17 @@ export const generateMockIncident = (): Incident => {
   const chosenAnalysis = specificAnalyses[Math.floor(Math.random() * specificAnalyses.length)];
 
   const chosenActionLog = actionLogSamples[Math.floor(Math.random() * actionLogSamples.length)];
+  
+  const initialChatMessages: ChatMessage[] = [];
+  if (Math.random() < 0.2) { // Occasionally add an initial AI message
+      initialChatMessages.push({
+          id: `ai-init-${Date.now()}`,
+          sender: 'ai',
+          text: `Hello! I'm the VUDA AI assistant. How can I help you with the "${titles[randomType][0]}" incident?`,
+          timestamp: new Date(Date.now() - Math.floor(Math.random() * 10000)) // slightly before incident
+      });
+  }
+
 
   return {
     id: `inc-${incidentIdCounter}-${Date.now()}`,
@@ -151,6 +162,7 @@ export const generateMockIncident = (): Incident => {
       ...action,
       timestamp: `${new Date().getHours().toString().padStart(2, '0')}:${(new Date().getMinutes() - Math.floor(Math.random()*5)).toString().padStart(2, '0')}:${new Date().getSeconds().toString().padStart(2, '0')}`
     })),
+    chatHistory: initialChatMessages,
   };
 };
 
