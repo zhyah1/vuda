@@ -16,13 +16,20 @@ const locations: string[] = [
   'Medical College Campus', 'Museum Road', 'Peroorkada Market', 'Ulloor Crossing'
 ];
 
+// Updated initialAnalyses to reflect AI video understanding with anomaly tags
 const initialAnalyses: string[] = [
-  "Motion detected, audio sensors picked up shouting.",
-  "Thermal imaging shows elevated heat signature.",
-  "Facial recognition matched a person of interest.",
-  "License plate reader flagged a suspicious vehicle.",
-  "Crowd density analysis indicates unusual gathering."
+  "Video feed shows two individuals in a physical altercation near the ATM. One individual pushed the other to the ground. (Detected Anomalies: Physical_Assault, Fighting)",
+  "Thermal imaging from Camera 4B indicates a significant heat signature emanating from the ground floor of the residential building. Smoke visible from a window. (Detected Anomalies: Fire_Outbreak, Smoke)",
+  "A person is observed collapsing suddenly near the bus stop on MG Road. No immediate assistance visible. (Detected Anomalies: Person_Collapsed, Medical_Emergency)",
+  "Vehicle (Red Sedan, KL-01-XX-1234) ran a red light at high speed at Pattom Junction, narrowly avoiding pedestrians. (Detected Anomalies: Reckless_Driving, Pedestrian_In_Danger)",
+  "An unidentified backpack has been left unattended near the main entrance of the mall for over 15 minutes. Area is moderately crowded. (Detected Anomalies: Abandoned_Baggage, Suspicious_Activity)",
+  "Individual seen scaling the perimeter fence of the restricted power substation. (Detected Anomalies: Unauthorized_Access, Trespassing_Alert)",
+  "Video analytics detect an individual forcibly taking a handbag from another person and fleeing towards the East street. (Detected Anomalies: Robbery, Theft)",
+  "A large crowd is gathering rapidly at City Square, signs of agitation and shouting observed. Potential for escalation. (Detected Anomalies: Riots_Or_Protest_Violence, Public_Disturbance)",
+  "Child appears disoriented and alone near the park fountain. Matches description of a reported lost child. (Detected Anomalies: Lost_Child)",
+  "Multiple individuals observed spraying graffiti on public property at Kowdiar. (Detected Anomalies: Vandalism_In_Progress)"
 ];
+
 
 const initialActions: string[] = [
   "Camera automatically panned and zoomed to event.",
@@ -95,3 +102,4 @@ export const getInitialMockIncidents = (): Incident[] => {
   return Array.from({ length: INITIAL_INCIDENTS_COUNT }, generateMockIncident)
     .sort((a, b) => b.timestamp.getTime() - a.timestamp.getTime());
 };
+
