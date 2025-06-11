@@ -5,10 +5,67 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { Button } from '@/components/ui/button';
 import VudaLogo from '@/components/dashboard/VudaLogo'; 
-import { ShieldCheck, Activity, BrainCircuit } from 'lucide-react';
+import { ShieldCheck, Activity, BrainCircuit, AlertTriangle } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { generateLandingPageImage } from '@/ai/flows/generate-landing-image';
+import { useToast } from '@/hooks/use-toast';
+import { Skeleton } from '@/components/ui/skeleton';
 
+
+const INITIAL_PLACEHOLDER_IMAGE_URL = "https://placehold.co/1200x600.png";
 
 export default function LandingPage() {
+  const [heroImageUrl, setHeroImageUrl] = useState<string>(INITIAL_PLACEHOLDER_IMAGE_URL);
+  const [isLoadingImage, setIsLoadingImage] = useState<boolean>(true);
+  const [imageError, setImageError] = useState<boolean>(false);
+  const { toast } = useToast();
+
+  useEffect(() => {
+    let isMounted = true; // Prevent state update on unmounted component
+    
+    const fetchImage = async () => {
+      if (!isMounted) return;
+      setIsLoadingImage(true);
+      setImageError(false); 
+      try {
+        const result = await generateLandingPageImage();
+        if (isMounted) {
+          if (result.imageDataUri) {
+            setHeroImageUrl(result.imageDataUri);
+          } else {
+            console.error("Landing page image generation returned no data URI.");
+            setImageError(true); 
+            toast({
+                variant: "destructive",
+                title: "Image Generation Issue",
+                description: "AI failed to provide an image. Displaying placeholder.",
+            });
+          }
+        }
+      } catch (error) {
+        console.error('Failed to generate landing page image:', error);
+        if (isMounted) {
+          setImageError(true); 
+          toast({
+            variant: "destructive",
+            title: "Image Generation Error",
+            description: "Could not load the AI-generated hero image. Displaying placeholder.",
+          });
+        }
+      } finally {
+        if (isMounted) {
+          setIsLoadingImage(false);
+        }
+      }
+    };
+
+    fetchImage();
+    
+    return () => {
+      isMounted = false; 
+    };
+  }, [toast]); // Added toast to dependency array
+
   return (
     <div className="flex flex-col min-h-screen bg-background text-foreground">
       {/* Header for Landing Page */}
@@ -45,15 +102,26 @@ export default function LandingPage() {
         <section className="py-12 md:py-20 bg-card/50">
           <div className="container mx-auto px-6">
             <div className="relative w-full max-w-5xl mx-auto aspect-[16/8] rounded-xl overflow-hidden shadow-2xl border-2 border-primary/30">
-              <Image
-                src="https://placehold.co/1200x600.png" 
-                alt="VUDA Platform Showcase"
-                layout="fill"
-                objectFit="cover"
-                className="transform hover:scale-105 transition-transform duration-700 ease-out"
-                data-ai-hint="city technology future" 
-              />
-               <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-transparent"></div>
+              {isLoadingImage ? (
+                <Skeleton className="absolute inset-0 w-full h-full" />
+              ) : (
+                 <Image
+                    src={heroImageUrl} 
+                    alt={heroImageUrl === INITIAL_PLACEHOLDER_IMAGE_URL ? "VUDA Platform Showcase" : "AI Generated VUDA Platform Showcase"}
+                    layout="fill"
+                    objectFit="cover"
+                    className="transform hover:scale-105 transition-transform duration-700 ease-out"
+                    data-ai-hint={heroImageUrl === INITIAL_PLACEHOLDER_IMAGE_URL ? "city technology future" : "AI generated abstract"}
+                    unoptimized={heroImageUrl.startsWith('data:image')} // Important for data URIs
+                  />
+              )}
+              {!isLoadingImage && imageError && (
+                <div className="absolute inset-0 flex flex-col items-center justify-center bg-black/60 text-white p-4">
+                  <AlertTriangle className="h-10 w-10 mb-2 text-yellow-400" />
+                  <p className="text-sm text-center font-medium">AI image failed to load. Displaying default.</p>
+                </div>
+              )}
+               <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-transparent pointer-events-none"></div>
             </div>
           </div>
         </section>
