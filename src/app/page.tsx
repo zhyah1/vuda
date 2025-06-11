@@ -28,19 +28,9 @@ export default function LandingPage() {
       setIsLoadingImage(true);
       setImageError(false); 
       try {
-        const result = await generateLandingPageImage();
+        const result = await generateLandingPageImage(); // If this succeeds, result.imageDataUri is guaranteed by the flow.
         if (isMounted) {
-          if (result.imageDataUri) {
-            setHeroImageUrl(result.imageDataUri);
-          } else {
-            console.error("Landing page image generation returned no data URI.");
-            setImageError(true); 
-            toast({
-                variant: "destructive",
-                title: "Image Generation Issue",
-                description: "AI failed to provide an image. Displaying placeholder.",
-            });
-          }
+          setHeroImageUrl(result.imageDataUri);
         }
       } catch (error) {
         console.error('Failed to generate landing page image:', error);
@@ -64,7 +54,7 @@ export default function LandingPage() {
     return () => {
       isMounted = false; 
     };
-  }, [toast]); // Added toast to dependency array
+  }, [toast]);
 
   return (
     <div className="flex flex-col min-h-screen bg-background text-foreground">
