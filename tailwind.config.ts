@@ -1,4 +1,4 @@
-import type {Config} from 'tailwindcss';
+import type {Config}from 'tailwindcss';
 
 export default {
   darkMode: ['class'],
@@ -45,6 +45,10 @@ export default {
           DEFAULT: 'hsl(var(--destructive))',
           foreground: 'hsl(var(--destructive-foreground))',
         },
+        success: {
+          DEFAULT: 'hsl(var(--success))',
+          foreground: 'hsl(var(--success-foreground))',
+        },
         border: 'hsl(var(--border))',
         input: 'hsl(var(--input))',
         ring: 'hsl(var(--ring))',
@@ -88,10 +92,20 @@ export default {
             height: '0',
           },
         },
+        blink: {
+          '0%, 100%': { opacity: '1' },
+          '50%': { opacity: '0.3' },
+        },
+        glow: {
+          '0%, 100%': { boxShadow: '0 0 5px hsl(var(--success)), 0 0 10px hsl(var(--success))' },
+          '50%': { boxShadow: '0 0 10px hsl(var(--success) / 0.8), 0 0 20px hsl(var(--success) / 0.8)' },
+        }
       },
       animation: {
         'accordion-down': 'accordion-down 0.2s ease-out',
         'accordion-up': 'accordion-up 0.2s ease-out',
+        blink: 'blink 1.5s infinite',
+        glow: 'glow 2s infinite ease-in-out',
       },
     },
   },
