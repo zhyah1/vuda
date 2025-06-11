@@ -57,8 +57,8 @@ const CityMap: React.FC<CityMapProps> = ({ incidents }) => {
   }, []);
 
   const memoizedMarkers = useMemo(() => {
-    if (!isLoaded) {
-      return []; // Don't try to create markers if Google Maps API isn't loaded
+    if (!isLoaded) { // Ensure isLoaded before accessing window.google
+      return []; 
     }
     return cameraLocations.map((camera) => {
       const activeIncidentAtCamera = incidents.find(
@@ -87,16 +87,16 @@ const CityMap: React.FC<CityMapProps> = ({ incidents }) => {
         />
       );
     });
-  }, [incidents, handleMarkerClick, isLoaded]); // Added isLoaded to dependency array
+  }, [incidents, handleMarkerClick, isLoaded]);
 
 
   if (loadError) {
     return (
-      <Card className="shadow-xl h-full overflow-hidden">
-        <CardHeader>
+      <Card className="shadow-xl h-full overflow-hidden flex flex-col">
+        <CardHeader className="flex-shrink-0">
           <CardTitle className="text-lg font-semibold text-foreground">City Activity Map (Thiruvananthapuram)</CardTitle>
         </CardHeader>
-        <CardContent className="p-0 relative h-[calc(100%-4rem)] flex items-center justify-center">
+        <CardContent className="p-0 relative flex-grow flex items-center justify-center">
           <div className="text-center text-destructive">
             <AlertTriangle className="h-12 w-12 mx-auto mb-2" />
             <p>Error loading Google Maps.</p>
@@ -109,11 +109,11 @@ const CityMap: React.FC<CityMapProps> = ({ incidents }) => {
 
   if (!isLoaded) {
      return (
-      <Card className="shadow-xl h-full overflow-hidden">
-        <CardHeader>
+      <Card className="shadow-xl h-full overflow-hidden flex flex-col">
+        <CardHeader className="flex-shrink-0">
           <CardTitle className="text-lg font-semibold text-foreground">City Activity Map (Thiruvananthapuram)</CardTitle>
         </CardHeader>
-        <CardContent className="p-0 relative h-[calc(100%-4rem)]">
+        <CardContent className="p-0 relative flex-grow">
           <Skeleton className="w-full h-full" />
         </CardContent>
       </Card>
@@ -121,11 +121,11 @@ const CityMap: React.FC<CityMapProps> = ({ incidents }) => {
   }
   
   return (
-    <Card className="shadow-xl h-full overflow-hidden" data-ai-hint="Thiruvananthapuram city map">
-      <CardHeader>
+    <Card className="shadow-xl h-full overflow-hidden flex flex-col" data-ai-hint="Thiruvananthapuram city map">
+      <CardHeader className="flex-shrink-0">
         <CardTitle className="text-lg font-semibold text-foreground">City Activity Map (Thiruvananthapuram)</CardTitle>
       </CardHeader>
-      <CardContent className="p-0 relative h-[calc(100%-4rem)]"> {/* Adjust height based on header */}
+      <CardContent className="p-0 relative flex-grow">
         <GoogleMap
           mapContainerStyle={mapContainerStyle}
           center={center}
@@ -140,7 +140,7 @@ const CityMap: React.FC<CityMapProps> = ({ incidents }) => {
         >
           {memoizedMarkers}
 
-          {selectedCamera && isLoaded && ( // Ensure isLoaded for InfoWindow options too
+          {selectedCamera && isLoaded && ( 
             <InfoWindow
               position={{ lat: selectedCamera.lat, lng: selectedCamera.lon }}
               onCloseClick={() => setSelectedCamera(null)}
