@@ -24,6 +24,7 @@ export default function DashboardPage() {
   const [selectedIncident, setSelectedIncident] = useState<Incident | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isLoadingAiSummary, setIsLoadingAiSummary] = useState(false);
+  const [newlyAddedIncidentIds, setNewlyAddedIncidentIds] = useState<Set<string>>(new Set());
   const { toast } = useToast();
 
   useEffect(() => {
@@ -52,7 +53,8 @@ export default function DashboardPage() {
     const interval = setInterval(() => {
       const newIncident = generateMockIncident();
       setIncidents(prevIncidents => [newIncident, ...prevIncidents].slice(0, 50)); 
-       if (newIncident.status !== 'Resolved') {
+      
+      if (newIncident.status !== 'Resolved') {
         toast({
           title: (
             <div className="flex items-center gap-2">
@@ -63,6 +65,20 @@ export default function DashboardPage() {
           description: `${newIncident.location}`,
           variant: newIncident.status === 'Critical' ? 'destructive' : 'default',
         });
+
+        // For map pop-up effect
+        setNewlyAddedIncidentIds(prev => {
+          const next = new Set(prev);
+          next.add(newIncident.id);
+          return next;
+        });
+        setTimeout(() => {
+          setNewlyAddedIncidentIds(prev => {
+            const next = new Set(prev);
+            next.delete(newIncident.id);
+            return next;
+          });
+        }, 7000); // Pop effect lasts 7 seconds
       }
     }, Math.random() * 5000 + 10000); 
 
@@ -179,7 +195,7 @@ export default function DashboardPage() {
         
         <div className="flex-grow grid grid-cols-1 lg:grid-cols-3 gap-4 md:gap-6 p-4 md:p-6 overflow-hidden">
           <div className="lg:col-span-2 h-[60vh] lg:h-auto min-h-[400px]">
-            <CityMap incidents={incidents} />
+            <CityMap incidents={incidents} newlyAddedIncidentIds={newlyAddedIncidentIds} />
           </div>
 
           <div className="lg:col-span-1 h-[60vh] lg:h-auto min-h-[400px]">

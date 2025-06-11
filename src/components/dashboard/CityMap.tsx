@@ -11,6 +11,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 
 interface CityMapProps {
   incidents: Incident[];
+  newlyAddedIncidentIds: Set<string>;
 }
 
 // Predefined camera locations for Thiruvananthapuram (fictional)
@@ -38,15 +39,29 @@ const center = {
   lng: 76.9366  // Longitude for Thiruvananthapuram
 };
 
-const getMarkerIconUrl = (incident?: Incident): string => {
-  const criticalColorHex = 'E53E3E'; // Destructive Red from HSL(0, 72%, 51%)
-  const warningColorHex = 'FFBF00';   // Accent Amber from HSL(45, 100%, 50%)
-  const newColorHex = '19F4E8';       // Primary Teal from HSL(183, 100%, 55%)
+const getMarkerIconConfig = (
+  incident: Incident | undefined,
+  isNewlyAdded: boolean,
+  googleMapsLoaded: boolean
+): google.maps.Icon | undefined => {
+  if (!googleMapsLoaded || !window.google?.maps?.Size || !window.google?.maps?.Point) {
+    return undefined;
+  }
+
+  const criticalColorHex = 'E53E3E'; // Destructive Red HSL(0, 72%, 51%)
+  const warningColorHex = 'FFBF00';   // Accent Amber HSL(45, 100%, 50%)
+  const newColorHex = '19F4E8';       // Primary Teal HSL(183, 100%, 55%)
   const defaultCameraColorHex = '19F4E8'; // Primary Teal for normal cameras
+  const popOutlineColorHex = 'FFFFFF'; // White for pop effect outline
+
+  let fillColor = defaultCameraColorHex;
+  let strokeColor = defaultCameraColorHex; // For standard active incidents
+  let svgContent: string;
+  let baseSize = 20; // Standard size
 
   if (incident && incident.status !== 'Resolved') {
-    let fillColor = newColorHex; 
-    let strokeColor = newColorHex;
+    fillColor = newColorHex; // Default for 'New' status incidents
+    strokeColor = newColorHex;
 
     switch (incident.status) {
       case 'Critical':
@@ -57,18 +72,34 @@ const getMarkerIconUrl = (incident?: Incident): string => {
         fillColor = warningColorHex;
         strokeColor = warningColorHex;
         break;
-      // 'New' uses newColorHex by default
     }
-    // Active incident marker: filled inner circle, same color stroke outer circle
-    return `data:image/svg+xml,${encodeURIComponent(`<svg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='%23${strokeColor}' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><circle cx='12' cy='12' r='10'></circle><circle cx='12' cy='12' r='4' fill='%23${fillColor}'></circle></svg>`)}`;
+
+    if (isNewlyAdded) {
+      baseSize = 30; // Larger size for "pop" effect
+      // SVG for "pop" effect: status color dot with a prominent outer ring
+      svgContent = `<svg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24'>
+        <circle cx='12' cy='12' r='11' fill='hsla(0,0%,100%,0.3)' /> 
+        <circle cx='12' cy='12' r='8' stroke='%23${popOutlineColorHex}' stroke-width='2' fill='none' />
+        <circle cx='12' cy='12' r='5' fill='%23${fillColor}' />
+      </svg>`;
+    } else {
+      // Standard active incident marker
+      svgContent = `<svg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='%23${strokeColor}' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><circle cx='12' cy='12' r='10'></circle><circle cx='12' cy='12' r='4' fill='%23${fillColor}'></circle></svg>`;
+    }
+  } else {
+    // Default camera icon (no active, non-resolved, non-newly-added incident)
+     svgContent = `<svg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='%23${defaultCameraColorHex}' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><circle cx='12' cy='12' r='6' fill='%23${defaultCameraColorHex}' fill-opacity='0.3'></circle><circle cx='12' cy='12' r='2' fill='%23${defaultCameraColorHex}'></circle></svg>`;
   }
   
-  // Default camera icon (no active, non-resolved incident)
-  return `data:image/svg+xml,${encodeURIComponent(`<svg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='%23${defaultCameraColorHex}' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><circle cx='12' cy='12' r='6' fill='%23${defaultCameraColorHex}' fill-opacity='0.3'></circle><circle cx='12' cy='12' r='2' fill='%23${defaultCameraColorHex}'></circle></svg>`)}`;
+  return {
+    url: `data:image/svg+xml,${encodeURIComponent(svgContent)}`,
+    scaledSize: new window.google.maps.Size(baseSize, baseSize),
+    anchor: new window.google.maps.Point(baseSize / 2, baseSize / 2),
+  };
 };
 
 
-const CityMap: React.FC<CityMapProps> = ({ incidents }) => {
+const CityMap: React.FC<CityMapProps> = ({ incidents, newlyAddedIncidentIds }) => {
   const { isLoaded, loadError } = useJsApiLoader({
     id: 'google-map-script',
     googleMapsApiKey: process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY || "",
@@ -80,7 +111,7 @@ const CityMap: React.FC<CityMapProps> = ({ incidents }) => {
     const activeIncidentAtCamera = incidents.find(
       (inc) => 
       inc.status !== 'Resolved' &&
-      Math.abs(inc.latitude - camera.lat) < 0.01 && // Looser matching for demo
+      Math.abs(inc.latitude - camera.lat) < 0.01 && 
       Math.abs(inc.longitude - camera.lon) < 0.01 
     );
     setSelectedCamera({ ...camera, incident: activeIncidentAtCamera });
@@ -102,7 +133,8 @@ const CityMap: React.FC<CityMapProps> = ({ incidents }) => {
         Math.abs(inc.longitude - camera.lon) < 0.01
       );
       
-      const iconUrl = getMarkerIconUrl(activeIncidentAtCamera);
+      const isNewlyAdded = !!activeIncidentAtCamera && newlyAddedIncidentIds.has(activeIncidentAtCamera.id);
+      const iconConfig = getMarkerIconConfig(activeIncidentAtCamera, isNewlyAdded, isLoaded && !!window.google?.maps?.Size);
 
       return (
         <Marker
@@ -110,15 +142,12 @@ const CityMap: React.FC<CityMapProps> = ({ incidents }) => {
           position={{ lat: camera.lat, lng: camera.lon }}
           onClick={() => handleMarkerClick(camera)}
           title={camera.name}
-          icon={isLoaded ? { // Ensure window.google.maps is available
-            url: iconUrl,
-            scaledSize: new window.google.maps.Size(20, 20),
-            anchor: new window.google.maps.Point(10, 10),
-          } : undefined}
+          icon={iconConfig}
+          zIndex={isNewlyAdded ? 1000 : undefined} // Ensure new markers are on top
         />
       );
     });
-  }, [incidents, handleMarkerClick, isLoaded]);
+  }, [incidents, handleMarkerClick, isLoaded, newlyAddedIncidentIds]);
 
 
   if (loadError) {
@@ -175,7 +204,7 @@ const CityMap: React.FC<CityMapProps> = ({ incidents }) => {
             <InfoWindow
               position={{ lat: selectedCamera.lat, lng: selectedCamera.lon }}
               onCloseClick={() => setSelectedCamera(null)}
-              options={isLoaded ? { pixelOffset: new window.google.maps.Size(0, -25) } : undefined}
+              options={isLoaded && window.google?.maps?.Size ? { pixelOffset: new window.google.maps.Size(0, -25) } : undefined}
             >
               <div className="p-2 bg-popover text-popover-foreground rounded-md shadow-lg max-w-xs">
                 <h4 className="text-sm font-semibold mb-1">{selectedCamera.name}</h4>
