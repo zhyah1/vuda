@@ -1,6 +1,7 @@
 // src/lib/supabase/middleware.ts
 import { createServerClient, type CookieOptions } from '@supabase/ssr';
-import type { NextRequest, NextResponse } from 'next/server';
+import { NextResponse } from 'next/server';
+import type { NextRequest } from 'next/server';
 import type { Database } from './database.types';
 
 export async function updateSession(request: NextRequest) {
