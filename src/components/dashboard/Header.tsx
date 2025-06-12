@@ -2,16 +2,63 @@
 'use client';
 
 import type React from 'react';
-import { UserCircle2 } from 'lucide-react';
+import { UserCircle2, LogOut } from 'lucide-react';
 import VudaLogo from './VudaLogo';
+import { Button } from '@/components/ui/button';
+import { signOut } from '@/app/auth/actions'; // Assuming signOut is a server action
+import { createSupabaseBrowserClient } from '@/lib/supabase/client';
+import { useRouter } from 'next/navigation';
+import { useEffect, useState } from 'react';
+import type { User } from '@supabase/supabase-js';
 
 const Header: React.FC = () => {
+  const router = useRouter();
+  const [user, setUser] = useState<User | null>(null);
+  const supabase = createSupabaseBrowserClient();
+
+  useEffect(() => {
+    const getUser = async () => {
+      const { data: { user: currentUser } } = await supabase.auth.getUser();
+      setUser(currentUser);
+    };
+    getUser();
+
+    const { data: authListener } = supabase.auth.onAuthStateChange((event, session) => {
+      setUser(session?.user ?? null);
+      if (event === 'SIGNED_OUT') {
+        router.replace('/auth/login');
+      }
+    });
+    
+    return () => {
+      authListener?.subscription.unsubscribe();
+    };
+  }, [supabase, router]);
+
+  const handleSignOut = async () => {
+    await signOut();
+    // The onAuthStateChange listener should handle redirecting to login page
+  };
+
   return (
     <header className="fixed top-0 left-0 right-0 z-50 h-16 bg-card border-b border-border flex items-center justify-between px-4 md:px-6 shadow-md">
       <VudaLogo />
       <div className="flex items-center gap-3">
-        <span className="text-sm text-foreground font-medium hidden sm:inline">Thiruvananthapuram City Operations Center</span>
-        <UserCircle2 className="h-7 w-7 text-primary" />
+        {user ? (
+          <>
+            <span className="text-sm text-foreground font-medium hidden sm:inline">
+              {user.email || 'Thiruvananthapuram City Operations Center'}
+            </span>
+            <Button variant="ghost" size="icon" onClick={handleSignOut} title="Sign Out">
+              <LogOut className="h-5 w-5 text-primary" />
+            </Button>
+          </>
+        ) : (
+          <>
+            <span className="text-sm text-foreground font-medium hidden sm:inline">Thiruvananthapuram City Operations Center</span>
+            <UserCircle2 className="h-7 w-7 text-primary" />
+          </>
+        )}
       </div>
     </header>
   );
