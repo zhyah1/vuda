@@ -1,50 +1,10 @@
 // src/middleware.ts
-import { type NextRequest, NextResponse } from 'next/server';
-import { createSupabaseMiddlewareClient } from '@/lib/supabase/middleware'; // Your wrapper
+import { NextResponse } from 'next/server';
+import type { NextRequest } from 'next/server';
 
-export async function middleware(request: NextRequest) {
-  // Create a response object that can be modified by Supabase
-  // This response object will be passed to your wrapper
-  const response = NextResponse.next({
-    request: {
-      headers: request.headers,
-    },
-  });
-
-  // Initialize Supabase client.
-  // NOTE: If you are experiencing build errors related to `createMiddlewareClient`
-  // not being found in `@supabase/ssr` (especially with Next.js 15.3.3+),
-  // please see the detailed CRITICAL BUILD ERROR NOTE in `src/lib/supabase/middleware.ts`.
-  // The issue is very likely with the Next.js bundler for the edge runtime and
-  // requires external troubleshooting (e.g., cleaning node_modules, changing Next.js version).
-  const supabase = createSupabaseMiddlewareClient(request, response);
-
-  // Refresh session if expired - required for Server Components
-  const { data: { session } } = await supabase.auth.getSession();
-
-  const { pathname } = request.nextUrl;
-
-  // Define public paths that don't require authentication
-  const publicPaths = ['/', '/auth/login', '/auth/signup', '/auth/callback'];
-  const isPublicPath = publicPaths.some(path => pathname.startsWith(path));
-
-  // If user is not authenticated and trying to access a protected route
-  if (!session && !isPublicPath) {
-    const loginUrl = new URL('/auth/login', request.url);
-    loginUrl.searchParams.set('message', 'Please log in to access this page.');
-    if (pathname.startsWith('/dashboard')) {
-      loginUrl.searchParams.set('redirect_to', pathname);
-    }
-    return NextResponse.redirect(loginUrl);
-  }
-
-  // If user is authenticated and tries to access login/signup, redirect to dashboard
-  if (session && (pathname.startsWith('/auth/login') || pathname.startsWith('/auth/signup'))) {
-    return NextResponse.redirect(new URL('/dashboard', request.url));
-  }
-  
-  // Return the response, which may have been modified by Supabase (e.g., with new session cookies)
-  return response;
+export function middleware(request: NextRequest) {
+  // This middleware is now a simple pass-through as authentication has been removed.
+  return NextResponse.next();
 }
 
 export const config = {

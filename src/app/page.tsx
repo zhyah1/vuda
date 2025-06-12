@@ -4,28 +4,17 @@ import Image from 'next/image';
 import { Button } from '@/components/ui/button';
 import VudaLogo from '@/components/dashboard/VudaLogo'; 
 import { ShieldCheck, Activity, BrainCircuit } from 'lucide-react';
-import { createSupabaseServerClient } from '@/lib/supabase/server';
-import { cookies } from 'next/headers';
-import { redirect } from 'next/navigation';
 
 const INITIAL_PLACEHOLDER_IMAGE_URL = "https://placehold.co/1200x600.png";
 
 export default async function LandingPage() {
-  const cookieStore = cookies();
-  const supabase = createSupabaseServerClient(cookieStore);
-  const { data: { session } } = await supabase.auth.getSession();
-
-  if (session) {
-    redirect('/dashboard');
-  }
-
   return (
     <div className="flex flex-col min-h-screen bg-background text-foreground">
       {/* Header for Landing Page */}
       <header className="py-4 px-6 md:px-10 shadow-md bg-card border-b border-border sticky top-0 z-50">
         <div className="container mx-auto flex justify-between items-center">
           <VudaLogo />
-          <Link href="/auth/login">
+          <Link href="/dashboard">
             <Button variant="outline" className="text-primary border-primary hover:bg-primary hover:text-primary-foreground">
               Access Dashboard
             </Button>
@@ -43,7 +32,7 @@ export default async function LandingPage() {
                 <p className="text-xl md:text-2xl text-muted-foreground mb-10 max-w-3xl mx-auto">
                     Imagine every security camera not just recording, but understanding and acting. VUDA is the AI platform transforming passive video feeds into a proactive public safety network.
                 </p>
-                <Link href="/auth/login">
+                <Link href="/dashboard">
                     <Button size="lg" className="bg-primary text-primary-foreground hover:bg-primary/90 shadow-lg transform hover:scale-105 transition-transform duration-300">
                     Launch VUDA Dashboard
                     </Button>
