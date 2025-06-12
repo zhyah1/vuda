@@ -1,5 +1,6 @@
 // src/lib/supabase/middleware.ts
 import { createMiddlewareClient } from '@supabase/ssr';
+import type { CookieOptions } from '@supabase/ssr';
 import type { NextRequest, NextResponse } from 'next/server';
 import type { Database } from '@/lib/supabase/database.types';
 
@@ -16,11 +17,11 @@ export function createSupabaseMiddlewareClient(
         get(name: string) {
           return req.cookies.get(name)?.value;
         },
-        set(name: string, value: string, options) {
+        set(name: string, value: string, options: CookieOptions) {
           // When Supabase needs to set a cookie, it should be set on the outgoing response
           res.cookies.set({ ...options, name, value });
         },
-        remove(name: string, options) {
+        remove(name: string, options: CookieOptions) {
           // When Supabase needs to remove a cookie, it should be removed from the outgoing response
           res.cookies.set({ ...options, name, value: '' });
         },
