@@ -11,8 +11,13 @@ export async function middleware(request: NextRequest) {
     },
   });
 
-  // Get Supabase client (and allow it to modify the response with new cookies)
-  const supabase = await createSupabaseMiddlewareClient(request, response);
+  // Initialize Supabase client.
+  // NOTE: If you are experiencing build errors related to `createMiddlewareClient`
+  // not being found in `@supabase/ssr` (especially with Next.js 15.3.3+),
+  // please see the detailed CRITICAL BUILD ERROR NOTE in `src/lib/supabase/middleware.ts`.
+  // The issue is very likely with the Next.js bundler for the edge runtime and
+  // requires external troubleshooting (e.g., cleaning node_modules, changing Next.js version).
+  const supabase = createSupabaseMiddlewareClient(request, response);
 
   // Refresh session if expired - required for Server Components
   const { data: { session } } = await supabase.auth.getSession();
