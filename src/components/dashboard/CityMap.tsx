@@ -4,7 +4,7 @@
 import type React from 'react';
 import { useState, useCallback, useMemo } from 'react';
 import { GoogleMap, useJsApiLoader, Marker, InfoWindow } from '@react-google-maps/api';
-import { AlertTriangle } from 'lucide-react';
+import { AlertTriangle, WifiOff } from 'lucide-react';
 import type { Incident } from '@/lib/types';
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Skeleton } from '@/components/ui/skeleton';
@@ -76,18 +76,15 @@ const getMarkerIconConfig = (
 
     if (isNewlyAdded) {
       baseSize = 30; // Larger size for "pop" effect
-      // SVG for "pop" effect: status color dot with a prominent outer ring
       svgContent = `<svg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24'>
         <circle cx='12' cy='12' r='11' fill='hsla(0,0%,100%,0.3)' /> 
         <circle cx='12' cy='12' r='8' stroke='%23${popOutlineColorHex}' stroke-width='2' fill='none' />
         <circle cx='12' cy='12' r='5' fill='%23${fillColor}' />
       </svg>`;
     } else {
-      // Standard active incident marker
       svgContent = `<svg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='%23${strokeColor}' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><circle cx='12' cy='12' r='10'></circle><circle cx='12' cy='12' r='4' fill='%23${fillColor}'></circle></svg>`;
     }
   } else {
-    // Default camera icon (no active, non-resolved, non-newly-added incident)
      svgContent = `<svg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='%23${defaultCameraColorHex}' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><circle cx='12' cy='12' r='6' fill='%23${defaultCameraColorHex}' fill-opacity='0.3'></circle><circle cx='12' cy='12' r='2' fill='%23${defaultCameraColorHex}'></circle></svg>`;
   }
   
@@ -100,9 +97,35 @@ const getMarkerIconConfig = (
 
 
 const CityMap: React.FC<CityMapProps> = ({ incidents, newlyAddedIncidentIds }) => {
+  const apiKey = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY;
+  const isApiKeyMissing = !apiKey;
+  const isApiKeyPlaceholder = apiKey === "REPLACE_THIS_WITH_YOUR_ACTUAL_GOOGLE_MAPS_API_KEY";
+
+  if (isApiKeyMissing || isApiKeyPlaceholder) {
+    return (
+      <Card className="shadow-xl h-full overflow-hidden flex flex-col">
+        <CardHeader className="flex-shrink-0">
+          <CardTitle className="text-lg font-semibold text-foreground">City Activity Map (Thiruvananthapuram)</CardTitle>
+        </CardHeader>
+        <CardContent className="p-0 relative flex-grow flex items-center justify-center">
+          <div className="text-center text-destructive p-4">
+            <WifiOff className="h-12 w-12 mx-auto mb-3 text-destructive" />
+            <p className="font-semibold text-lg">Google Maps API Key Error</p>
+            {isApiKeyMissing && <p className="text-sm">The Google Maps API key (<code>NEXT_PUBLIC_GOOGLE_MAPS_API_KEY</code>) is missing.</p>}
+            {isApiKeyPlaceholder && <p className="text-sm">The placeholder Google Maps API key needs to be replaced with a valid one.</p>}
+            <p className="text-xs text-muted-foreground mt-3">
+              Please ensure <code>NEXT_PUBLIC_GOOGLE_MAPS_API_KEY</code> is correctly set in your <code>.env</code> file.
+              You must restart your development server after updating the <code>.env</code> file.
+            </p>
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
+  
   const { isLoaded, loadError } = useJsApiLoader({
     id: 'google-map-script',
-    googleMapsApiKey: process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY || "",
+    googleMapsApiKey: apiKey, 
   });
 
   const [selectedCamera, setSelectedCamera] = useState<(typeof cameraLocations[0] & { incident?: Incident }) | null>(null);
@@ -143,7 +166,7 @@ const CityMap: React.FC<CityMapProps> = ({ incidents, newlyAddedIncidentIds }) =
           onClick={() => handleMarkerClick(camera)}
           title={camera.name}
           icon={iconConfig}
-          zIndex={isNewlyAdded ? 1000 : undefined} // Ensure new markers are on top
+          zIndex={isNewlyAdded ? 1000 : undefined} 
         />
       );
     });
@@ -157,10 +180,11 @@ const CityMap: React.FC<CityMapProps> = ({ incidents, newlyAddedIncidentIds }) =
           <CardTitle className="text-lg font-semibold text-foreground">City Activity Map (Thiruvananthapuram)</CardTitle>
         </CardHeader>
         <CardContent className="p-0 relative flex-grow flex items-center justify-center">
-          <div className="text-center text-destructive">
-            <AlertTriangle className="h-12 w-12 mx-auto mb-2" />
-            <p>Error loading Google Maps.</p>
-            <p className="text-xs text-muted-foreground">Please ensure the API key is correct and the API is enabled.</p>
+          <div className="text-center text-destructive p-4">
+            <AlertTriangle className="h-12 w-12 mx-auto mb-3" />
+            <p className="font-semibold text-lg">Error Loading Google Maps</p>
+            <p className="text-sm">The map service could not be loaded. This might be due to an invalid API key, incorrect API configuration in Google Cloud Console, or network issues.</p>
+            <p className="text-xs text-muted-foreground mt-2">Please check your <code>NEXT_PUBLIC_GOOGLE_MAPS_API_KEY</code>, ensure the Maps JavaScript API is enabled, and verify your billing status with Google Cloud.</p>
           </div>
         </CardContent>
       </Card>
@@ -195,7 +219,6 @@ const CityMap: React.FC<CityMapProps> = ({ incidents, newlyAddedIncidentIds }) =
             streetViewControl: false, 
             mapTypeControl: false,
             fullscreenControl: false,
-            // styles: mapStyles // Example for custom dark theme styles for map
           }}
         >
           {memoizedMarkers}
