@@ -4,17 +4,11 @@ import Image from 'next/image';
 import { Button } from '@/components/ui/button';
 import VudaLogo from '@/components/dashboard/VudaLogo'; 
 import { ShieldCheck, Activity, BrainCircuit } from 'lucide-react';
-import { createSupabaseServerClient } from '@/lib/supabase/server';
-import { cookies } from 'next/headers';
 
 const INITIAL_PLACEHOLDER_IMAGE_URL = "https://placehold.co/1200x600.png";
 
-export default async function LandingPage() {
-  const cookieStore = cookies();
-  const supabase = createSupabaseServerClient(cookieStore);
-  const { data: { session } } = await supabase.auth.getSession();
-
-  const dashboardLink = session ? '/dashboard' : '/auth/login';
+export default function LandingPage() {
+  const dashboardLink = '/dashboard';
 
   return (
     <div className="flex flex-col min-h-screen bg-background text-foreground">
@@ -55,7 +49,7 @@ export default async function LandingPage() {
               <Image
                 src={INITIAL_PLACEHOLDER_IMAGE_URL} 
                 alt="VUDA Platform Showcase Placeholder"
-                layout="fill"
+                fill
                 objectFit="cover"
                 className="transform hover:scale-105 transition-transform duration-700 ease-out"
                 data-ai-hint="city technology future"
