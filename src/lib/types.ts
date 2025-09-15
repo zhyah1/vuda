@@ -1,4 +1,5 @@
 
+
 export type IncidentStatus = 'Critical' | 'Warning' | 'Resolved' | 'New';
 export type IncidentType = 
   | 'Violent Crime' 
@@ -6,7 +7,8 @@ export type IncidentType =
   | 'Fire Alert' 
   | 'Traffic Accident' 
   | 'Suspicious Activity'
-  | 'Public Safety Threat';
+  | 'Public Safety Threat'
+  | 'Other';
 
 export interface IncidentAction {
   timestamp: string;
@@ -37,4 +39,5 @@ export interface Incident {
   actionLog?: IncidentAction[];
   chatHistory?: ChatMessage[];
 }
+
 
