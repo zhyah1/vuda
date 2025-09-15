@@ -12,7 +12,7 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 
 // Simulated real-time AI observations for the new video
 const SIMULATED_AI_LOGS = [
-  { time: 2, text: "AI System Initializing... Analyzing traffic camera feed.", tags: ['System'] },
+  { time: 2, text: "AI System Initializing... Analyzing traffic camera feed from junction.", tags: ['System'] },
   { time: 5, text: "Multiple vehicles detected: buses, cars, and auto-rickshaws.", tags: ['Vehicle', 'Traffic'] },
   { time: 8, text: "Pedestrian crosswalk is active. High foot traffic detected.", tags: ['Crowd', 'Pedestrian'] },
   { time: 12, text: "Vehicle detected: Red public bus (KL-15 registration) stopping at the bus stop.", tags: ['Vehicle', 'Public Transport'] },
@@ -174,4 +174,3 @@ export default function LiveAnalysisPage() {
     </div>
   );
 }
-
