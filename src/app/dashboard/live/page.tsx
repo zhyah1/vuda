@@ -6,7 +6,7 @@ import type React from 'react';
 import { useState, useEffect, useRef } from 'react';
 import Header from '@/components/dashboard/Header';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Bot, Youtube, Loader2 } from 'lucide-react';
+import { Bot, Youtube, Loader2, Video } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
 
@@ -101,7 +101,7 @@ export default function LiveAnalysisPage() {
         <Card className="w-full max-w-7xl shadow-2xl">
           <CardHeader>
             <CardTitle className="flex items-center gap-2 text-2xl">
-              <Youtube className="text-primary" />
+              <Video className="text-primary" />
               Live Stream Analysis
             </CardTitle>
             <CardDescription>
@@ -109,19 +109,29 @@ export default function LiveAnalysisPage() {
             </CardDescription>
           </CardHeader>
           <CardContent className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            {/* Left Column: YouTube Video */}
+            {/* Left Column: Local Video Player */}
             <div className="lg:col-span-2 space-y-4">
               <div className="aspect-video bg-muted rounded-md overflow-hidden relative border-2 border-primary">
                 {isClient ? (
-                  <iframe
+                  <video
                     width="100%"
                     height="100%"
-                    src="https://www.youtube.com/embed/xIT71VDGM6o?autoplay=1&mute=1&controls=0&loop=1&playlist=xIT71VDGM6o"
-                    title="YouTube video player"
-                    frameBorder="0"
-                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                    allowFullScreen
-                  ></iframe>
+                    src="/videos/live-feed.mp4"
+                    autoPlay
+                    muted
+                    loop
+                    playsInline
+                    className="w-full h-full object-cover"
+                    onError={(e) => {
+                      const videoElement = e.target as HTMLVideoElement;
+                      if (videoElement.error?.code === 4) {
+                        console.error("Local video not found. Please ensure 'public/videos/live-feed.mp4' exists.");
+                        // You can display a user-friendly message in the UI here
+                      }
+                    }}
+                  >
+                    Your browser does not support the video tag.
+                  </video>
                 ) : (
                   <div className="w-full h-full flex items-center justify-center text-muted-foreground">
                      <Loader2 className="h-12 w-12 animate-spin" />
