@@ -5,7 +5,7 @@ const titles: Record<IncidentType, string[]> = {
   'Violent Crime': ['Assault Reported', 'Robbery in Progress', 'Public Disturbance'],
   'Medical Emergency': ['Cardiac Arrest', 'Fall Detected', 'Unresponsive Person'],
   'Fire Alert': ['Smoke Detected in Building', 'Structure Fire Reported', 'Vehicle Fire'],
-  'Traffic Accident': ['Multi-vehicle Collision', 'Pedestrian Struck', 'Road Blockage Major Intersection'],
+  'Traffic Accident': ['Multi-vehicle Collision', 'Pedestrian Struck', 'Road Blockage Major Intersection', 'Severe Traffic Jam', 'Vehicle Overturned'],
   'Suspicious Activity': ['Loitering Detected', 'Unattended Package', 'Trespassing Alert'],
   'Public Safety Threat': [
     'Large Crowd Forming', 'Vandalism Spree', 'Potential Riot Conditions', 
@@ -36,7 +36,9 @@ const initialAnalyses: Record<IncidentType, string[]> = {
     "Visible flames and smoke from a commercial kitchen exhaust. (Detected Anomalies: Fire_Outbreak, Commercial_Fire)",
   ],
   'Traffic Accident': [
-    "Vehicle (Red Sedan, KL-01-XX-1234) ran a red light at high speed at Pattom Junction, narrowly avoiding pedestrians. (Detected Anomalies: Reckless_Driving, Pedestrian_In_Danger)",
+    "AI analysis of traffic flow indicates a complete standstill on the highway for over 10 minutes. (Detected Anomalies: Severe_Congestion, Road_Blockage_Hazard)",
+    "A multi-vehicle pile-up has been detected at the main intersection, completely blocking northbound lanes. (Detected Anomalies: Accident_With_Injuries, Road_Blockage_Hazard)",
+    "Footage shows a vehicle has overturned, blocking two lanes of traffic. Emergency services required. (Detected Anomalies: Vehicle_Overturned, Accident_With_Injuries, Road_Blockage_Hazard)",
     "Two vehicles involved in a collision at intersection, blocking traffic. (Detected Anomalies: Accident_With_Injuries, Road_Blockage_Hazard)",
     "Motorcycle accident, rider down on road. (Detected Anomalies: Accident_With_Injuries, Medical_Emergency)",
   ],
@@ -131,13 +133,14 @@ const incidentTypes: IncidentType[] = [
   'Other'
 ];
 
-const preferredIncidentTypes: IncidentType[] = ['Public Safety Threat', 'Traffic Accident'];
+const preferredIncidentTypes: IncidentType[] = ['Public Safety Threat', 'Traffic Accident', 'Violent Crime'];
 
 export const generateMockIncident = (): Incident => {
   incidentIdCounter++;
   
   let randomType: IncidentType;
-  if (Math.random() < 0.6) { 
+  // Increase the probability of preferred incident types
+  if (Math.random() < 0.75) { 
     randomType = preferredIncidentTypes[Math.floor(Math.random() * preferredIncidentTypes.length)];
   } else {
     const nonPreferredTypes = incidentTypes.filter(type => !preferredIncidentTypes.includes(type));
