@@ -35,7 +35,7 @@ export async function generateIncidentSummary(input: GenerateIncidentSummaryInpu
 
 const prompt = ai.definePrompt({
   name: 'generateIncidentSummaryPrompt',
-  model: 'googleai/gemini-2.0-flash', // Explicitly set the model
+  model: 'googleai/gemini-1.5-flash', // Explicitly set the model
   input: {schema: GenerateIncidentSummaryInputSchema},
   output: {schema: GenerateIncidentSummaryOutputSchema},
   prompt: `You are an AI assistant that summarizes incidents for emergency response teams based on detailed video analysis and other available data.

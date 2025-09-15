@@ -13,6 +13,7 @@ const titles: Record<IncidentType, string[]> = {
     'Developing Unrest', 'Sudden Crowd Dispersal', 'Crowd Stampede Imminent', 
     'Unlawful Assembly Escalating', 'Public Panic Spreading'
   ],
+  'Other': ['Power Outage Reported', 'Animal Control Needed', 'Noise Complaint']
 };
 
 const locations: string[] = [
@@ -56,6 +57,11 @@ const initialAnalyses: Record<IncidentType, string[]> = {
     "AI analysis: Crowd near City Hall exhibiting panic behavior; rapid, uncontrolled movement. (Detected Anomalies: Crowd_Stampede, Public_Panic, Multiple_Persons_Down)",
     "Thermal and motion analysis show high-density crowd surging towards exits. (Detected Anomalies: Crowd_Surge, Stampede_Risk, Emergency_Exit_Blocked)",
     "Reports of shots fired leading to widespread panic and crowd stampede downtown. (Detected Anomalies: Active_Shooter, Crowd_Stampede, Mass_Casualty_Event)",
+  ],
+  'Other': [
+      "Widespread power outage detected affecting multiple traffic signals in the downtown area.",
+      "A large stray animal is obstructing traffic on the main highway. Animal control requested.",
+      "Multiple noise complaints logged from a residential area regarding a late-night party."
   ]
 };
 
@@ -121,7 +127,8 @@ const incidentTypes: IncidentType[] = [
   'Fire Alert', 
   'Traffic Accident', 
   'Suspicious Activity',
-  'Public Safety Threat'
+  'Public Safety Threat',
+  'Other'
 ];
 
 const preferredIncidentTypes: IncidentType[] = ['Public Safety Threat', 'Traffic Accident'];
@@ -192,4 +199,3 @@ export const getInitialMockIncidents = (): Incident[] => {
   return Array.from({ length: INITIAL_INCIDENTS_COUNT }, generateMockIncident)
     .sort((a, b) => b.timestamp.getTime() - a.timestamp.getTime());
 };
-

@@ -39,5 +39,3 @@ export interface Incident {
   actionLog?: IncidentAction[];
   chatHistory?: ChatMessage[];
 }
-
-
