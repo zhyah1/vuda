@@ -122,13 +122,6 @@ export default function LiveAnalysisPage() {
                     loop
                     playsInline
                     className="w-full h-full object-cover"
-                    onError={(e) => {
-                      const videoElement = e.target as HTMLVideoElement;
-                      if (videoElement.error?.code === 4) {
-                        console.error("Local video not found. Please ensure 'public/videos/live-feed.mp4' exists.");
-                        // You can display a user-friendly message in the UI here
-                      }
-                    }}
                   >
                     Your browser does not support the video tag.
                   </video>
