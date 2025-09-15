@@ -1,3 +1,4 @@
+
 // src/app/dashboard/live/page.tsx
 'use client';
 
@@ -9,31 +10,31 @@ import { Bot, Youtube, Loader2 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
 
-// Simulated real-time AI observations
+// Simulated real-time AI observations for the new video
 const SIMULATED_AI_LOGS = [
-  { time: 2, text: "AI System Initializing... Analyzing stream for anomalies.", tags: ['System'] },
-  { time: 5, text: "Vehicle detected: White sedan, license plate partially obscured.", tags: ['Vehicle'] },
-  { time: 8, text: "Crowd density appears normal for this time of day.", tags: ['Crowd'] },
-  { time: 12, text: "Subject detected loitering near the intersection for over 2 minutes.", tags: ['Suspicious Activity'] },
-  { time: 15, text: "Vehicle detected: Black SUV, moving at a consistent speed.", tags: ['Vehicle'] },
-  { time: 20, text: "Traffic flow is moderate. No congestion detected.", tags: ['Traffic'] },
-  { time: 25, text: "Audio analysis: Normal city ambiance, no audible distress signals.", tags: ['Audio'] },
-  { time: 30, text: "Subject previously marked as loitering is now walking away.", tags: ['Suspicious Activity', 'Resolved'] },
-  { time: 35, text: "New vehicle detected: Red hatchback.", tags: ['Vehicle'] },
-  { time: 41, text: "Anomaly detected: Vehicle (Black SUV) has stopped in a no-parking zone.", tags: ['Traffic', 'Warning'] },
-  { time: 45, text: "Monitoring Black SUV. Driver has not exited the vehicle.", tags: ['Traffic', 'Warning'] },
-  { time: 50, text: "Cross-referencing vehicle with watchlists... no immediate matches.", tags: ['System'] },
-  { time: 55, text: "Black SUV is now moving and merging back into traffic. Anomaly resolved.", tags: ['Traffic', 'Resolved'] },
-  { time: 62, text: "Pedestrian count increasing near the crosswalk.", tags: ['Crowd'] },
-  { time: 70, text: "System check: All camera inputs are nominal.", tags: ['System'] },
-  { time: 78, text: "Sudden movement detected. A person is running across the street, jaywalking.", tags: ['Pedestrian', 'Warning'] },
-  { time: 85, text: "No collisions occurred. The person has reached the other side.", tags: ['Pedestrian', 'Resolved'] },
-  { time: 95, text: "Analysis complete for this segment. Continuing to monitor stream.", tags: ['System'] },
+  { time: 2, text: "AI System Initializing... Analyzing traffic camera feed.", tags: ['System'] },
+  { time: 5, text: "Multiple vehicles detected: buses, cars, and auto-rickshaws.", tags: ['Vehicle', 'Traffic'] },
+  { time: 8, text: "Pedestrian crosswalk is active. High foot traffic detected.", tags: ['Crowd', 'Pedestrian'] },
+  { time: 12, text: "Vehicle detected: Red public bus (KL-15 registration) stopping at the bus stop.", tags: ['Vehicle', 'Public Transport'] },
+  { time: 16, text: "Anomaly detected: A motorcycle is attempting to bypass traffic by driving on the shoulder.", tags: ['Traffic', 'Warning'] },
+  { time: 21, text: "Traffic flow is currently heavy but moving. Monitoring for potential gridlock.", tags: ['Traffic'] },
+  { time: 26, text: "Audio analysis: Normal city traffic sounds, horns, and chatter.", tags: ['Audio'] },
+  { time: 31, text: "Motorcycle has merged back into traffic. Anomaly resolved.", tags: ['Traffic', 'Resolved'] },
+  { time: 36, text: "Subject detected waiting at crosswalk for an extended period.", tags: ['Pedestrian'] },
+  { time: 42, text: "Vehicle detected: White car, changing lanes without signaling.", tags: ['Vehicle', 'Minor Infraction'] },
+  { time: 48, text: "Monitoring intersection for red light violations. None detected.", tags: ['System', 'Traffic'] },
+  { time: 54, text: "A group of pedestrians is crossing against the signal.", tags: ['Pedestrian', 'Warning'] },
+  { time: 60, text: "No collisions occurred. Pedestrians have crossed safely. Situation normal.", tags: ['Pedestrian', 'Resolved'] },
+  { time: 68, text: "Bus has departed from the bus stop. Traffic flow resuming.", tags: ['Public Transport'] },
+  { time: 75, text: "System check: All camera inputs are nominal. Weather: Clear skies.", tags: ['System'] },
+  { time: 83, text: "Another bus approaching the intersection.", tags: ['Vehicle', 'Public Transport'] },
+  { time: 92, text: "Analysis segment complete. Continuing to monitor live feed.", tags: ['System'] },
 ];
 
 const getTagBadgeVariant = (tag: string) => {
   switch (tag.toLowerCase()) {
     case 'warning':
+    case 'minor infraction':
       return 'destructive';
     case 'resolved':
       return 'default'; // Using primary color for resolved
@@ -115,7 +116,7 @@ export default function LiveAnalysisPage() {
                   <iframe
                     width="100%"
                     height="100%"
-                    src="https://www.youtube.com/embed/f_a-P_3-x1U?autoplay=1&mute=1&controls=0&loop=1&playlist=f_a-P_3-x1U"
+                    src="https://www.youtube.com/embed/xIT71VDGM6o?autoplay=1&mute=1&controls=0&loop=1&playlist=xIT71VDGM6o"
                     title="YouTube video player"
                     frameBorder="0"
                     allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
@@ -173,3 +174,4 @@ export default function LiveAnalysisPage() {
     </div>
   );
 }
+
