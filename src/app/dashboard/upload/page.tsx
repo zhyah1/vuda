@@ -11,7 +11,8 @@ import { Label } from '@/components/ui/label';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Upload, Loader2, FileVideo, AlertCircle, Bot } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
-import { analyzeVideoIncident, type AnalyzeVideoIncidentInput, type AnalyzeVideoIncidentOutput } from '@/ai/flows/analyze-video-incident';
+import { analyzeVideoIncident } from '@/ai/flows/analyze-video-incident';
+import type { AnalyzeVideoIncidentInput, AnalyzeVideoIncidentOutput } from '@/ai/flows/schemas/analyze-video-incident-schemas';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 
@@ -58,46 +59,53 @@ export default function UploadPage() {
     setError(null);
     setAnalysisResult(null);
 
-    try {
-      const reader = new FileReader();
-      reader.readAsDataURL(file);
-      reader.onloadend = async () => {
-        const base64data = reader.result as string;
-        
-        const input: AnalyzeVideoIncidentInput = {
-          videoDataUri: base64data,
-        };
+    const reader = new FileReader();
+    
+    reader.onloadend = async () => {
+        try {
+            const base64data = reader.result as string;
+            
+            const input: AnalyzeVideoIncidentInput = {
+              videoDataUri: base64data,
+            };
 
-        const result = await analyzeVideoIncident(input);
+            const result = await analyzeVideoIncident(input);
 
-        if (!result || !result.report) {
-            throw new Error('Analysis failed to produce a valid report.');
+            if (!result || !result.report) {
+                throw new Error('Analysis failed to produce a valid report.');
+            }
+
+            setAnalysisResult(result);
+            toast({
+              title: 'Analysis Complete',
+              description: 'The video has been successfully analyzed.',
+            });
+        } catch (err: any) {
+            console.error('Analysis error:', err);
+            const errorMessage = err.message || 'An unexpected error occurred during analysis.';
+            setError(errorMessage);
+            toast({
+              title: 'Analysis Failed',
+              description: errorMessage,
+              variant: 'destructive',
+            });
+        } finally {
+            setIsLoading(false);
         }
-
-        setAnalysisResult(result);
+    };
+    
+    reader.onerror = () => {
+        console.error('File reading error');
+        setError('Failed to read the file.');
         toast({
-          title: 'Analysis Complete',
-          description: 'The video has been successfully analyzed.',
+            title: 'File Read Error',
+            description: 'Could not read the selected file.',
+            variant: 'destructive',
         });
-      };
-      reader.onerror = () => {
-        throw new Error('Failed to read the file.');
-      };
-    } catch (err: any) {
-      console.error('Analysis error:', err);
-      const errorMessage = err.message || 'An unexpected error occurred during analysis.';
-      setError(errorMessage);
-      toast({
-        title: 'Analysis Failed',
-        description: errorMessage,
-        variant: 'destructive',
-      });
-    } finally {
-      // FileReader is async, so we can't set isLoading false here directly.
-      // We'll set it in onloadend and onerror. For simplicity, let's just use a timeout
-      // to cover all cases, including immediate errors.
-      setTimeout(() => setIsLoading(false), 500);
-    }
+        setIsLoading(false);
+    };
+
+    reader.readAsDataURL(file);
   };
 
   return (

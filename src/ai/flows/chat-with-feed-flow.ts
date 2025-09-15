@@ -48,7 +48,7 @@ export async function chatWithFeed(input: ChatWithFeedInput): Promise<ChatWithFe
 
 const prompt = ai.definePrompt({
   name: 'chatWithFeedPrompt',
-  model: 'googleai/gemini-2.0-flash',
+  model: 'googleai/gemini-1.5-flash',
   input: {schema: ChatWithFeedInputSchema},
   output: {schema: ChatWithFeedOutputSchema},
   prompt: `You are a helpful AI assistant for the VUDA Public Safety Platform. You are interacting with an operator viewing an incident report.
