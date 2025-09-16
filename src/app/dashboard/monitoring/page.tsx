@@ -127,7 +127,9 @@ export default function MonitoringPage() {
           try {
             const base64data = reader.result as string;
             const result = await analyzeVideoIncident({ videoDataUri: base64data });
-            // The flow now throws an error if output is invalid, so this check is simpler.
+            if (!result || !result.incidentType || !result.report) {
+                throw new Error('The AI model did not return a valid analysis.');
+            }
             resolve(result);
           } catch (err) { reject(err); }
         };
@@ -159,10 +161,6 @@ export default function MonitoringPage() {
       if (err instanceof Error) {
         errorMessage = err.message;
       }
-      // Provide a more specific message if it seems like a size issue.
-      if (errorMessage.includes('larger than')) {
-        errorMessage = 'Analysis failed. The video file may be too large for the server to process.';
-      }
       setVideoSlots(prev => prev.map(s => s.id === id ? { ...s, status: 'error', error: errorMessage } : s));
       toast({ title: `Analysis Error for Feed ${id + 1}`, description: errorMessage, variant: 'destructive' });
     }
@@ -176,6 +174,17 @@ export default function MonitoringPage() {
   }, [videoSlots, handleAnalyze]);
 
   const handleFileSelect = useCallback((id: number, file: File) => {
+    // Check file size (20MB limit)
+    const MAX_FILE_SIZE = 1024 * 1024 * 200; // 200MB limit for local testing
+    if (file.size > MAX_FILE_SIZE) {
+      toast({
+        title: 'File Too Large',
+        description: `Please select a video file smaller than 200MB.`,
+        variant: 'destructive',
+      });
+      return;
+    }
+
     setVideoSlots(prevSlots => {
       return prevSlots.map(slot => {
         if (slot.id === id) {
@@ -195,7 +204,7 @@ export default function MonitoringPage() {
         return slot;
       });
     });
-  }, []);
+  }, [toast]);
 
   return (
     <div className="flex flex-col h-screen bg-background text-foreground">
@@ -245,15 +254,7 @@ export default function MonitoringPage() {
 
         {/* Right Sidebar */}
         <div className="w-80 flex-shrink-0 bg-card border-l border-border p-4 flex flex-col gap-4">
-            <Card className="flex-[2_2_0%] flex flex-col">
-                <CardHeader>
-                    <CardTitle className="flex items-center gap-2 text-lg"><Map className="h-5 w-5"/> Map</CardTitle>
-                </CardHeader>
-                <CardContent className="flex-grow p-0">
-                    <CityMap incidents={incidents} newlyAddedIncidentIds={new Set()} />
-                </CardContent>
-            </Card>
-             <Card className="flex-[1_1_0%] flex flex-col">
+             <Card className="flex-1 flex flex-col">
                 <CardHeader>
                     <CardTitle className="flex items-center gap-2 text-lg"><BarChart className="h-5 w-5"/> Analysis</CardTitle>
                 </CardHeader>
