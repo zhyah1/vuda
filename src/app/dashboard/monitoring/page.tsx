@@ -204,7 +204,7 @@ export default function MonitoringPage() {
       const input: ChatWithFeedInput = {
         userQuestion: userMessage.text,
         incidentContext: incidentContext,
-        chatHistory: selectedVideo.chatHistory.map(msg => ({ sender: msg.sender, text: msg.text })),
+        chatHistory: videoWithUserMessage.chatHistory.map(msg => ({ sender: msg.sender, text: msg.text })),
       };
 
       const result = await chatWithFeed(input);
@@ -215,6 +215,7 @@ export default function MonitoringPage() {
       setSelectedVideo(videoWithAiResponse);
 
     } catch (error) {
+      console.error('Chat error:', error);
       const errorMessage = "Could not get a response from the AI. Please try again.";
       const videoWithError = addMessageToChat(videoWithUserMessage, { sender: 'ai', text: errorMessage });
       updateVideoFile(videoWithError);
