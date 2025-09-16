@@ -135,6 +135,14 @@ export default function MultiCamAnalysisPage() {
   const { toast } = useToast();
   
   useEffect(() => {
+    // This effect handles triggering the analysis when a slot becomes 'ready'
+    const readySlot = videoSlots.find(slot => slot.status === 'ready' && slot.file);
+    if (readySlot) {
+      handleAnalyze(readySlot.id, readySlot.file);
+    }
+  }, [videoSlots]);
+
+  useEffect(() => {
     // Clean up object URLs on unmount
     return () => {
       videoSlots.forEach(slot => {
@@ -143,7 +151,7 @@ export default function MultiCamAnalysisPage() {
         }
       });
     };
-  }, []); // Should be empty dependency array
+  }, []); // Empty dependency array is correct here to run only on unmount.
 
   const handleFileSelect = useCallback((id: number, file: File) => {
     setVideoSlots(prevSlots => {
@@ -151,7 +159,7 @@ export default function MultiCamAnalysisPage() {
       const slotIndex = newSlots.findIndex(s => s.id === id);
 
       if (slotIndex !== -1) {
-        // Revoke old URL if it exists
+        // Revoke old URL if it exists to prevent memory leaks
         if (newSlots[slotIndex].previewUrl) {
           URL.revokeObjectURL(newSlots[slotIndex].previewUrl!);
         }
@@ -160,19 +168,17 @@ export default function MultiCamAnalysisPage() {
           ...newSlots[slotIndex],
           file: file,
           previewUrl: URL.createObjectURL(file),
-          status: 'ready',
+          status: 'ready', // Set status to 'ready' to trigger the useEffect
           error: null,
           analysisResult: null,
         };
-
-        // Automatically trigger analysis
-        handleAnalyze(id, file);
       }
       return newSlots;
     });
   }, []);
 
   const handleAnalyze = async (id: number, file: File) => {
+    // Set status to 'analyzing' immediately to prevent re-triggering
     setVideoSlots(prev => prev.map(s => s.id === id ? { ...s, status: 'analyzing' } : s));
     toast({ title: `Analysis Started for Feed ${id + 1}`, description: 'The video is being sent to the AI.' });
 
@@ -192,6 +198,7 @@ export default function MultiCamAnalysisPage() {
           }
         };
         reader.onerror = () => reject(new Error('Failed to read the video file.'));
+        reader.onabort = () => reject(new Error('File reading was aborted.'));
       });
 
       reader.readAsDataURL(file);
