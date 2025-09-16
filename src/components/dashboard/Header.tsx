@@ -3,7 +3,7 @@
 
 import type React from 'react';
 import Link from 'next/link';
-import { Upload, UserCircle2 } from 'lucide-react';
+import { LayoutGrid, UserCircle2 } from 'lucide-react';
 import VudaLogo from './VudaLogo';
 import { Button } from '@/components/ui/button';
 import { useRouter } from 'next/navigation';
@@ -19,8 +19,8 @@ const Header: React.FC = () => {
       <div className="flex items-center gap-3">
         <Link href="/dashboard/upload">
           <Button variant="outline" size="sm">
-            <Upload className="h-4 w-4 mr-2" />
-            Analyze Video
+            <LayoutGrid className="h-4 w-4 mr-2" />
+            Multi-Cam Analysis
           </Button>
         </Link>
         
