@@ -6,16 +6,14 @@ import { useState, useRef, useEffect, useCallback, useMemo } from 'react';
 import Header from '@/components/dashboard/Header';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Calendar } from '@/components/ui/calendar';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
-import { FileVideo, Bot, Loader2, Play, AlertCircle, Upload, CheckCircle, Map, BarChart } from 'lucide-react';
+import { FileVideo, Bot, Loader2, Play, AlertCircle, Upload, CheckCircle, BarChart } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { analyzeVideoIncident } from '@/ai/flows/analyze-video-incident';
 import type { AnalyzeVideoIncidentOutput } from '@/ai/flows/schemas/analyze-video-incident-schemas';
 import { cn } from '@/lib/utils';
-import CityMap from '@/components/dashboard/CityMap';
 import type { Incident } from '@/lib/types';
 import { getInitialMockIncidents } from '@/lib/mockData';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
@@ -174,12 +172,12 @@ export default function MonitoringPage() {
   }, [videoSlots, handleAnalyze]);
 
   const handleFileSelect = useCallback((id: number, file: File) => {
-    // Check file size (20MB limit)
-    const MAX_FILE_SIZE = 1024 * 1024 * 200; // 200MB limit for local testing
+    // Check file size (200MB limit for local testing)
+    const MAX_FILE_SIZE = 1024 * 1024 * 200; 
     if (file.size > MAX_FILE_SIZE) {
       toast({
         title: 'File Too Large',
-        description: `Please select a video file smaller than 200MB.`,
+        description: `Please select a video file smaller than 200MB for analysis on this platform.`,
         variant: 'destructive',
       });
       return;
@@ -213,11 +211,6 @@ export default function MonitoringPage() {
         {/* Left Sidebar */}
         <div className="w-64 flex-shrink-0 bg-card border-r border-border p-4 flex flex-col gap-4">
             <h3 className="text-lg font-semibold">Controls</h3>
-            <Calendar
-                mode="single"
-                selected={new Date()}
-                className="rounded-md border"
-            />
             <div className="space-y-2">
                 <Label>Time</Label>
                 <div className="flex gap-2">
