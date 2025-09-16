@@ -16,7 +16,6 @@ import { useToast } from "@/hooks/use-toast";
 import { format } from 'date-fns';
 import { ShieldAlert, AlertTriangle, Bell } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { getLastUploadedIncident } from './upload/page';
 
 const DEPARTMENTS_LIST = ['Police', 'Fireforce', 'MVD', 'EMS', 'Disaster Management', 'Event Security', 'City Transit Authority', 'Public Works', 'Animal Control'];
 
@@ -30,34 +29,8 @@ export default function DashboardPage() {
   const { toast } = useToast();
 
   useEffect(() => {
-    // Check for an incident from the upload page when the component mounts
-    const uploadedIncident = getLastUploadedIncident();
-    const initialIncidents = getInitialMockIncidents();
-    if (uploadedIncident) {
-      setIncidents([uploadedIncident, ...initialIncidents]);
-      // Trigger toast for the uploaded incident
-       toast({
-          title: (
-            <div className="flex items-center gap-2">
-              {getToastIcon(uploadedIncident.status)}
-              <span>New Alert (Uploaded): {uploadedIncident.title}</span>
-            </div>
-          ),
-          description: `${uploadedIncident.location}`,
-          variant: uploadedIncident.status === 'Critical' ? 'destructive' : 'default',
-        });
-        // Trigger map pop effect
-        setNewlyAddedIncidentIds(prev => new Set(prev).add(uploadedIncident.id));
-        setTimeout(() => {
-          setNewlyAddedIncidentIds(prev => {
-            const next = new Set(prev);
-            next.delete(uploadedIncident.id);
-            return next;
-          });
-        }, 7000);
-    } else {
-      setIncidents(initialIncidents);
-    }
+    // Initialize with mock incidents
+    setIncidents(getInitialMockIncidents());
   }, []);
   
   useEffect(() => {
