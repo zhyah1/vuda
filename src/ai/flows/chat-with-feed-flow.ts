@@ -1,4 +1,3 @@
-
 'use server';
 /**
  * @fileOverview AI flow to chat about an incident based on its context.
