@@ -3,7 +3,7 @@
 'use server';
 
 /**
- * @fileOverview Analyzes a video of an incident, generates a report, and suggests a response department.
+ * @fileOverview Analyzes a video of an incident, identifies the most significant anomaly, and reports it.
  * 
  * - analyzeVideoIncident - A function that handles the video analysis.
  */
@@ -14,7 +14,7 @@ import {
   type AnalyzeVideoIncidentInput,
   AnalyzeVideoIncidentOutputSchema, 
   type AnalyzeVideoIncidentOutput,
-  DEPARTMENTS_LIST 
+  ANOMALY_DEFINITIONS
 } from './schemas/analyze-video-incident-schemas';
 
 export async function analyzeVideoIncident(input: AnalyzeVideoIncidentInput): Promise<AnalyzeVideoIncidentOutput> {
@@ -26,17 +26,25 @@ const prompt = ai.definePrompt({
   model: 'googleai/gemini-1.5-flash', // A model that supports video
   input: { schema: AnalyzeVideoIncidentInputSchema },
   output: { schema: AnalyzeVideoIncidentOutputSchema },
-  prompt: `You are an AI assistant for a public safety platform. Your task is to analyze the provided video of an incident.
-  
-Watch the entire video carefully and provide the following information in the specified JSON format:
-1.  **report**: A clear and concise summary of what is happening in the video. Describe the key events, people, objects, and the environment from the whole video.
-2.  **incidentType**: Classify the most significant event in the video into one of the following categories: Violent Crime, Medical Emergency, Fire Alert, Traffic Accident, Suspicious Activity, Public Safety Threat, or Other. If nothing significant is happening, classify as 'Normal'.
-3.  **suggestedDepartment**: Based on your analysis, suggest the single most appropriate department to handle this incident. Choose one from the following list: ${DEPARTMENTS_LIST.join(', ')}. If 'Normal', suggest 'None'.
+  prompt: `You are an AI public safety monitoring system. Your ONLY task is to analyze the provided video and determine if it contains any of the predefined anomalies listed below.
+
+Watch the entire video carefully. Identify the SINGLE most critical and significant anomaly present.
+
+If a significant anomaly is detected, set "isSignificant" to true and set "incidentType" to the corresponding anomaly key (e.g., "Physical_Assault").
+If the video shows normal, everyday activity with no threats or emergencies, set "isSignificant" to false and set "incidentType" to "Normal_Activity".
+
+Do not provide a descriptive report. Your response must be only the JSON object with the two specified fields.
+
+Anomaly Definitions:
+---
+${ANOMALY_DEFINITIONS}
+---
 
 Video to analyze:
 {{media url=videoDataUri}}
 `,
 });
+
 
 const analyzeVideoIncidentFlow = ai.defineFlow(
   {
@@ -48,6 +56,10 @@ const analyzeVideoIncidentFlow = ai.defineFlow(
     const { output } = await prompt(input);
     if (!output) {
       throw new Error('The AI model did not return a valid analysis.');
+    }
+     // Add a check for the output structure itself
+    if (typeof output.isSignificant !== 'boolean' || typeof output.incidentType !== 'string') {
+      throw new Error('The AI model returned an invalid data structure.');
     }
     return output;
   }

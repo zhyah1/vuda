@@ -1,3 +1,4 @@
+
 // src/app/dashboard/monitoring/page.tsx
 'use client';
 
@@ -9,7 +10,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
-import { FileVideo, Bot, Loader2, Play, AlertCircle, Upload, CheckCircle, BarChart } from 'lucide-react';
+import { FileVideo, Bot, Loader2, Play, AlertCircle, Upload, CheckCircle, BarChart, ShieldAlert } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { analyzeVideoIncident } from '@/ai/flows/analyze-video-incident';
 import type { AnalyzeVideoIncidentOutput } from '@/ai/flows/schemas/analyze-video-incident-schemas';
@@ -66,13 +67,15 @@ const VideoAnalysisSlot: React.FC<{
     }
   };
 
+  const incidentTypeText = slot.analysisResult?.incidentType.replace(/_/g, ' ') ?? 'Awaiting Analysis';
+
   return (
     <Card 
       className={cn(
         "h-full w-full flex flex-col transition-all duration-300 relative aspect-video",
         (slot.status === 'empty' || slot.status === 'error') && 'cursor-pointer hover:border-primary',
         slot.status === 'analyzing' && 'border-primary shadow-lg',
-        slot.status === 'analyzed' && 'border-green-500',
+        slot.analysisResult?.isSignificant ? 'border-destructive' : 'border-green-500',
         slot.status === 'error' && 'border-destructive'
       )}
       onClick={handleCardClick}
@@ -92,7 +95,11 @@ const VideoAnalysisSlot: React.FC<{
         <div className="absolute bottom-0 left-0 right-0 bg-black/50 p-1.5 text-white text-xs">
           {slot.status === 'analyzing' && <div className="flex items-center gap-1"><Loader2 className="h-3 w-3 animate-spin" />Analyzing...</div>}
           {slot.status === 'error' && <p className="text-destructive-foreground truncate">{slot.error}</p>}
-          {slot.status === 'analyzed' && slot.analysisResult && <p className="truncate text-green-300">{slot.analysisResult.incidentType}</p>}
+          {slot.status === 'analyzed' && (
+            <p className={cn("truncate", slot.analysisResult?.isSignificant ? "text-amber-400" : "text-green-300")}>
+                {incidentTypeText}
+            </p>
+          )}
           {(slot.status === 'empty' || slot.status === 'ready') && <p>Awaiting Video</p>}
         </div>
 
@@ -116,8 +123,7 @@ export default function MonitoringPage() {
 
   const handleAnalyze = useCallback(async (id: number, file: File) => {
     setVideoSlots(prev => prev.map(s => s.id === id ? { ...s, status: 'analyzing', error: null } : s));
-    toast({ title: `Analysis Started for Feed ${id + 1}` });
-
+    
     try {
       const reader = new FileReader();
       const analysisPromise = new Promise<AnalyzeVideoIncidentOutput>((resolve, reject) => {
@@ -125,8 +131,8 @@ export default function MonitoringPage() {
           try {
             const base64data = reader.result as string;
             const result = await analyzeVideoIncident({ videoDataUri: base64data });
-            if (!result || !result.incidentType || !result.report) {
-                throw new Error('The AI model did not return a valid analysis.');
+            if (!result || typeof result.isSignificant !== 'boolean' || typeof result.incidentType !== 'string') {
+                throw new Error('The AI model returned an invalid data structure.');
             }
             resolve(result);
           } catch (err) { reject(err); }
@@ -139,17 +145,21 @@ export default function MonitoringPage() {
 
       setVideoSlots(prev => prev.map(s => s.id === id ? { ...s, status: 'analyzed', analysisResult: result } : s));
       
-      if(result.incidentType !== 'Normal') {
+      if(result.isSignificant) {
           toast({ 
-              title: `Alert from Feed ${id + 1}: ${result.incidentType}`, 
-              description: result.report,
+              title: (
+                <div className="flex items-center gap-2">
+                  <ShieldAlert className="h-5 w-5 text-destructive-foreground" />
+                  <span>New Alert: {result.incidentType.replace(/_/g, ' ')}</span>
+                </div>
+              ), 
+              description: `From Video Feed ${id + 1}`,
               variant: 'destructive'
           });
            // Update chart data
           const time = new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: false });
           setChartData(prev => [...prev.slice(-5), { time, anomalies: (prev.at(-1)?.anomalies ?? 0) + 1 }]);
       } else {
-         toast({ title: `Analysis Complete for Feed ${id + 1}`, description: 'No significant events detected.' });
          const time = new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: false });
          setChartData(prev => [...prev.slice(-5), { time, anomalies: prev.at(-1)?.anomalies ?? 0 }]);
       }
@@ -177,7 +187,7 @@ export default function MonitoringPage() {
     if (file.size > MAX_FILE_SIZE) {
       toast({
         title: 'File Too Large',
-        description: `Please select a video file smaller than 200MB for analysis on this platform.`,
+        description: `Please select a video file smaller than 200MB. For larger files, direct integration with a storage service is recommended.`,
         variant: 'destructive',
       });
       return;
