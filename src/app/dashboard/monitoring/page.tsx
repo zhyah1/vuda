@@ -118,12 +118,59 @@ export default function MonitoringPage() {
     setIncidents(getInitialMockIncidents());
   }, []);
 
+  const handleAnalyze = useCallback(async (id: number, file: File) => {
+    setVideoSlots(prev => prev.map(s => s.id === id ? { ...s, status: 'analyzing' } : s));
+    toast({ title: `Analysis Started for Feed ${id + 1}` });
+
+    try {
+      const reader = new FileReader();
+      const analysisPromise = new Promise<AnalyzeVideoIncidentOutput>((resolve, reject) => {
+        reader.onloadend = async () => {
+          try {
+            const base64data = reader.result as string;
+            const result = await analyzeVideoIncident({ videoDataUri: base64data });
+            if (!result || !result.report) {
+              throw new Error('AI analysis failed to produce a valid report.');
+            }
+            resolve(result);
+          } catch (err) { reject(err); }
+        };
+        reader.onerror = () => reject(new Error('Failed to read video file.'));
+        reader.readAsDataURL(file);
+      });
+      
+      const result = await analysisPromise;
+
+      setVideoSlots(prev => prev.map(s => s.id === id ? { ...s, status: 'analyzed', analysisResult: result } : s));
+      
+      if(result.incidentType !== 'Normal') {
+          toast({ 
+              title: `Alert from Feed ${id + 1}: ${result.incidentType}`, 
+              description: result.report,
+              variant: 'destructive'
+          });
+           // Update chart data
+          const time = new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: false });
+          setChartData(prev => [...prev.slice(-5), { time, anomalies: (prev.at(-1)?.anomalies ?? 0) + 1 }]);
+      } else {
+         toast({ title: `Analysis Complete for Feed ${id + 1}`, description: 'No significant events detected.' });
+         const time = new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: false });
+         setChartData(prev => [...prev.slice(-5), { time, anomalies: prev.at(-1)?.anomalies ?? 0 }]);
+      }
+
+    } catch (err: any) {
+      const errorMessage = err.message || 'An unexpected error occurred during analysis.';
+      setVideoSlots(prev => prev.map(s => s.id === id ? { ...s, status: 'error', error: errorMessage } : s));
+      toast({ title: `Analysis Error for Feed ${id + 1}`, description: errorMessage, variant: 'destructive' });
+    }
+  }, [toast]);
+
   useEffect(() => {
     const readySlot = videoSlots.find(slot => slot.status === 'ready' && slot.file);
     if (readySlot) {
-      handleAnalyze(readySlot.id, readySlot.file);
+      handleAnalyze(readySlot.id, readySlot.file as File);
     }
-  }, [videoSlots]);
+  }, [videoSlots, handleAnalyze]);
 
   const handleFileSelect = useCallback((id: number, file: File) => {
     setVideoSlots(prevSlots => {
@@ -146,53 +193,6 @@ export default function MonitoringPage() {
       return newSlots;
     });
   }, []);
-
-  const handleAnalyze = async (id: number, file: File) => {
-    setVideoSlots(prev => prev.map(s => s.id === id ? { ...s, status: 'analyzing' } : s));
-    toast({ title: `Analysis Started for Feed ${id + 1}` });
-
-    try {
-      const reader = new FileReader();
-      const analysisPromise = new Promise<AnalyzeVideoIncidentOutput>((resolve, reject) => {
-        reader.onloadend = async () => {
-          try {
-            const base64data = reader.result as string;
-            const result = await analyzeVideoIncident({ videoDataUri: base64data });
-            if (!result || !result.report) {
-              throw new Error('AI analysis failed to produce a valid report.');
-            }
-            resolve(result);
-          } catch (err) { reject(err); }
-        };
-        reader.onerror = () => reject(new Error('Failed to read video file.'));
-      });
-      reader.readAsDataURL(file);
-      const result = await analysisPromise;
-
-      setVideoSlots(prev => prev.map(s => s.id === id ? { ...s, status: 'analyzed', analysisResult: result } : s));
-      
-      if(result.incidentType !== 'Normal') {
-          toast({ 
-              title: `Alert from Feed ${id + 1}: ${result.incidentType}`, 
-              description: result.report,
-              variant: 'destructive'
-          });
-           // Update chart data
-          const time = new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: false });
-          setChartData(prev => [...prev.slice(-5), { time, anomalies: (prev.at(-1)?.anomalies ?? 0) + 1 }]);
-      } else {
-         toast({ title: `Analysis Complete for Feed ${id + 1}`, description: 'No significant events detected.' });
-         const time = new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: false });
-         setChartData(prev => [...prev.slice(-5), { time, anomalies: prev.at(-1)?.anomalies ?? 0 }]);
-      }
-
-
-    } catch (err: any) {
-      const errorMessage = err.message || 'An unexpected error occurred.';
-      setVideoSlots(prev => prev.map(s => s.id === id ? { ...s, status: 'error', error: errorMessage } : s));
-      toast({ title: `Analysis Error for Feed ${id + 1}`, description: errorMessage, variant: 'destructive' });
-    }
-  };
 
   return (
     <div className="flex flex-col h-screen bg-background text-foreground">
