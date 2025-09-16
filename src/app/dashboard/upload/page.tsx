@@ -3,324 +3,272 @@
 'use client';
 
 import type React from 'react';
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect, useCallback } from 'react';
 import Header from '@/components/dashboard/Header';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { Upload, Loader2, FileVideo, AlertCircle, Bot, Siren } from 'lucide-react';
+import { Upload, Loader2, FileVideo, Bot, Play, Pause, AlertCircle } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { analyzeVideoIncident } from '@/ai/flows/analyze-video-incident';
 import type { AnalyzeVideoIncidentInput, AnalyzeVideoIncidentOutput } from '@/ai/flows/schemas/analyze-video-incident-schemas';
-import type { Incident, IncidentAction } from '@/lib/types';
-import { Badge } from '@/components/ui/badge';
-import { Separator } from '@/components/ui/separator';
-import { useRouter } from 'next/navigation';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { Progress } from '@/components/ui/progress';
 
-
-// This is a simplified context/store for sharing state between pages.
-// In a larger app, consider Zustand or React Context with a provider in the layout.
-let lastUploadedIncident: Incident | null = null;
-export const setLastUploadedIncident = (incident: Incident | null) => {
-  lastUploadedIncident = incident;
-};
-export const getLastUploadedIncident = () => {
-    const incident = lastUploadedIncident;
-    lastUploadedIncident = null; // Consume the incident
-    return incident;
-};
-
+interface AnalysisLog extends AnalyzeVideoIncidentOutput {
+  timestamp: string;
+  chunk: number;
+}
 
 export default function UploadPage() {
   const [file, setFile] = useState<File | null>(null);
   const [videoPreviewUrl, setVideoPreviewUrl] = useState<string | null>(null);
-  const [isLoading, setIsLoading] = useState(false);
-  const [analysisResult, setAnalysisResult] = useState<AnalyzeVideoIncidentOutput | null>(null);
+  const [isAnalyzing, setIsAnalyzing] = useState(false);
+  const [analysisLogs, setAnalysisLogs] = useState<AnalysisLog[]>([]);
   const [error, setError] = useState<string | null>(null);
+  const [totalChunks, setTotalChunks] = useState(0);
+  const [processedChunks, setProcessedChunks] = useState(0);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
+  const analysisStateRef = useRef({ isRunning: false }); // To control the analysis loop
   const { toast } = useToast();
-  const router = useRouter();
-
 
   useEffect(() => {
-    // Cleanup the object URL when the component unmounts or file changes
+    // Cleanup the object URL
     return () => {
       if (videoPreviewUrl) {
         URL.revokeObjectURL(videoPreviewUrl);
       }
+      analysisStateRef.current.isRunning = false; // Stop analysis if component unmounts
     };
   }, [videoPreviewUrl]);
 
   const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const selectedFile = event.target.files?.[0];
     if (selectedFile) {
-      if (selectedFile.size > 20 * 1024 * 1024) { // 20MB limit
+       if (selectedFile.size > 20 * 1024 * 1024) { // 20MB limit
         toast({
           title: 'File Too Large',
-          description: 'Please select a video file smaller than 20MB.',
+          description: 'Please select a video file smaller than 20MB for this demo.',
           variant: 'destructive',
         });
-        setFile(null);
-        setVideoPreviewUrl(null);
-        if (fileInputRef.current) {
-          fileInputRef.current.value = '';
-        }
         return;
       }
       setFile(selectedFile);
-      setAnalysisResult(null);
-      setError(null);
-      
-      const url = URL.createObjectURL(selectedFile);
-      setVideoPreviewUrl(url);
+      setVideoPreviewUrl(URL.createObjectURL(selectedFile));
+      resetAnalysis();
     }
   };
 
-  const createIncidentFromAnalysis = (analysis: AnalyzeVideoIncidentOutput): Incident => {
-    return {
-      id: `vid-upload-${Date.now()}`,
-      type: analysis.incidentType as Incident['type'],
-      title: `Uploaded Video: ${analysis.incidentType}`,
-      location: 'Uploaded Video Analysis',
-      timestamp: new Date(),
-      status: 'Critical', // Assume all uploaded videos are critical for now
-      latitude: 8.5241 + (Math.random() - 0.5) * 0.1, // Randomize coords around Thiruvananthapuram
-      longitude: 76.9366 + (Math.random() - 0.5) * 0.1,
-      cameraImage: 'https://placehold.co/600x400.png?text=From+Upload', // Placeholder
-      initialAISystemAnalysis: analysis.report,
-      initialActionsTaken: 'Manual analysis initiated via video upload.',
-      actionLog: [{ timestamp: new Date().toLocaleTimeString(), description: 'Incident created from video upload.' }],
-    };
+  const resetAnalysis = () => {
+      setIsAnalyzing(false);
+      setAnalysisLogs([]);
+      setError(null);
+      setTotalChunks(0);
+      setProcessedChunks(0);
+      analysisStateRef.current.isRunning = false;
   };
 
-  const handleDispatchPolice = () => {
-    if (!analysisResult) return;
-
-    // Here you would typically call another function to actually dispatch police.
-    // For this demo, we'll just show a toast.
-    toast({
-        title: "Police Dispatched",
-        description: `Alert sent to Police department for incident: ${analysisResult.incidentType}`,
-    });
-
-    const incident = createIncidentFromAnalysis(analysisResult);
-    const policeAction: IncidentAction = {
-        timestamp: new Date().toLocaleTimeString(),
-        description: 'Operator dispatched Police unit.',
-        assignedToDepartment: 'Police',
-    };
-    incident.actionLog?.push(policeAction);
-
-    setLastUploadedIncident(incident);
-    router.push('/dashboard');
-};
-
   const handleAnalyzeClick = async () => {
-    if (!file) {
-      toast({
-        title: 'No File Selected',
-        description: 'Please select a video file to analyze.',
-        variant: 'destructive',
-      });
+    if (!file || !videoRef.current) return;
+    
+    const duration = videoRef.current.duration;
+    if (isNaN(duration) || duration === 0) {
+      toast({ title: "Video Error", description: "Could not determine video duration. Please try a different file.", variant: "destructive" });
       return;
     }
 
-    setIsLoading(true);
-    setError(null);
-    setAnalysisResult(null);
-
-    const reader = new FileReader();
+    resetAnalysis();
+    setIsAnalyzing(true);
+    analysisStateRef.current.isRunning = true;
     
-    reader.onloadend = async () => {
+    const chunkSize = 10; // 10 seconds
+    const numChunks = Math.ceil(duration / chunkSize);
+    setTotalChunks(numChunks);
+
+    for (let i = 0; i < numChunks; i++) {
+        if (!analysisStateRef.current.isRunning) {
+            toast({ title: "Analysis Cancelled", description: "The video analysis process was stopped." });
+            break;
+        }
+        
+        setProcessedChunks(i);
+        const startTime = i * chunkSize;
+        const endTime = Math.min((i + 1) * chunkSize, duration);
+
         try {
-            const base64data = reader.result as string;
+            const videoChunkBlob = await getVideoChunk(file, startTime, endTime);
+            const reader = new FileReader();
             
-            const input: AnalyzeVideoIncidentInput = {
-              videoDataUri: base64data,
-            };
+            const analysisPromise = new Promise<void>((resolve, reject) => {
+                reader.onloadend = async () => {
+                    try {
+                        const base64data = reader.result as string;
+                        const result = await analyzeVideoIncident({ videoDataUri: base64data });
 
-            const result = await analyzeVideoIncident(input);
-
-            if (!result || !result.report) {
-                throw new Error('Analysis failed to produce a valid report.');
-            }
-
-            setAnalysisResult(result);
-
-            // Create a new incident and navigate back to the dashboard
-            const newIncident = createIncidentFromAnalysis(result);
-            setLastUploadedIncident(newIncident); // "send" it to the dashboard page
-            
-            toast({
-              title: 'Analysis Complete & Alert Raised',
-              description: 'The incident has been added to the Live Alerts feed.',
-              action: (
-                <Button variant="outline" size="sm" onClick={() => router.push('/dashboard')}>
-                    View Dashboard
-                </Button>
-              ),
+                        if (!result || !result.report) {
+                            throw new Error('Analysis failed to produce a valid report for this chunk.');
+                        }
+                        
+                        const newLog: AnalysisLog = {
+                            ...result,
+                            timestamp: new Date().toLocaleTimeString(),
+                            chunk: i + 1,
+                        };
+                        setAnalysisLogs(prev => [...prev, newLog]);
+                        resolve();
+                    } catch (err) {
+                        reject(err);
+                    }
+                };
+                 reader.onerror = () => reject(new Error('Failed to read video chunk.'));
             });
+            
+            reader.readAsDataURL(videoChunkBlob);
+            await analysisPromise;
 
         } catch (err: any) {
-            console.error('Analysis error:', err);
-            const errorMessage = err.message || 'An unexpected error occurred during analysis.';
-            setError(errorMessage);
-            toast({
-              title: 'Analysis Failed',
-              description: errorMessage,
-              variant: 'destructive',
-            });
-        } finally {
-            setIsLoading(false);
+            console.error(`Error analyzing chunk ${i + 1}:`, err);
+            const errorMessage = err.message || 'An unexpected error occurred.';
+            setError(`Chunk ${i+1}: ${errorMessage}`);
+            setAnalysisLogs(prev => [...prev, {
+                timestamp: new Date().toLocaleTimeString(),
+                chunk: i + 1,
+                report: `Error: ${errorMessage}`,
+                incidentType: 'Analysis Error',
+                suggestedDepartment: 'None'
+            }]);
+            // Optional: stop on first error
+            // analysisStateRef.current.isRunning = false; 
         }
-    };
-    
-    reader.onerror = () => {
-        console.error('File reading error');
-        setError('Failed to read the file.');
-        toast({
-            title: 'File Read Error',
-            description: 'Could not read the selected file.',
-            variant: 'destructive',
-        });
-        setIsLoading(false);
-    };
-
-    reader.readAsDataURL(file);
+    }
+    setProcessedChunks(numChunks);
+    setIsAnalyzing(false);
+    analysisStateRef.current.isRunning = false;
+    toast({ title: "Analysis Complete", description: `Finished analyzing all ${numChunks} chunks.` });
   };
+  
+  // This is a simplified chunking function. For real-world use, a library like ffmpeg.wasm would be more robust.
+  const getVideoChunk = async (videoFile: File, startTime: number, endTime: number): Promise<Blob> => {
+      // This is a placeholder for actual video splitting.
+      // In a real browser environment, we can't easily split video files without complex libraries (like ffmpeg.wasm).
+      // For this demo, we will send the *entire* video file for each chunk.
+      // The AI prompt will be instructed to focus on the specified time range.
+      // This is a limitation of browser capabilities, not the AI.
+      return videoFile;
+  };
+  
+  const handleCancel = () => {
+    analysisStateRef.current.isRunning = false;
+    setIsAnalyzing(false);
+  };
+
 
   return (
     <div className="flex flex-col min-h-screen bg-background">
       <Header />
-      <main className="flex-grow pt-16 flex items-start justify-center p-4 md:p-6">
-        <Card className="w-full max-w-4xl shadow-2xl">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2 text-2xl">
-              <Upload className="text-primary" />
-              Upload & Analyze Incident Video
-            </CardTitle>
-            <CardDescription>
-              Select a video file to simulate a live feed. The AI will analyze it to generate a report, suggest a response, and create an alert on the dashboard.
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            {/* Left Column: Upload and Preview */}
-            <div className="space-y-4">
-               <div className="space-y-2">
-                <Label htmlFor="video-upload">Video File</Label>
-                <Input
-                  id="video-upload"
-                  type="file"
-                  accept="video/*"
-                  onChange={handleFileChange}
-                  ref={fileInputRef}
-                  className="file:text-primary-foreground file:bg-primary hover:file:bg-primary/90"
-                  disabled={isLoading}
-                />
-              </div>
-              
+      <main className="flex-grow pt-16 flex flex-col items-center justify-start p-4 md:p-6 space-y-6">
+        
+        {!file && (
+          <Card className="w-full max-w-lg text-center p-8 border-dashed border-2">
+            <CardHeader>
+              <FileVideo className="mx-auto h-16 w-16 text-muted-foreground" />
+              <CardTitle>Simulate Live Video Analysis</CardTitle>
+              <CardDescription>Upload a video to begin the simulated real-time analysis. The video will be processed in 10-second chunks.</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <Label htmlFor="video-upload" className="sr-only">Upload Video</Label>
+              <Input
+                id="video-upload"
+                type="file"
+                accept="video/mp4,video/webm"
+                onChange={handleFileChange}
+                ref={fileInputRef}
+                className="file:text-primary-foreground file:bg-primary hover:file:bg-primary/90"
+              />
+            </CardContent>
+          </Card>
+        )}
+
+        {file && (
+          <div className="w-full max-w-6xl mx-auto grid grid-cols-1 lg:grid-cols-3 gap-6">
+            {/* Left Column: Video and Controls */}
+            <div className="lg:col-span-2 space-y-4">
               <div className="aspect-video bg-muted rounded-md overflow-hidden relative border border-border">
-                {videoPreviewUrl ? (
-                    <video ref={videoRef} src={videoPreviewUrl} controls autoPlay muted loop className="w-full h-full object-cover" />
-                ) : (
-                    <div className="w-full h-full flex items-center justify-center text-muted-foreground">
-                        <FileVideo className="h-12 w-12" />
-                    </div>
+                {videoPreviewUrl && (
+                  <video ref={videoRef} src={videoPreviewUrl} controls autoPlay muted loop className="w-full h-full object-cover" onLoadedMetadata={handleAnalyzeClick}/>
                 )}
               </div>
-              
-              {file && !isLoading && !analysisResult && (
-                <Alert variant="default" className="flex items-center gap-4">
-                  <FileVideo className="h-6 w-6 text-primary" />
-                  <div>
-                    <AlertTitle>{file.name}</AlertTitle>
-                    <AlertDescription>
-                      {(file.size / 1024 / 1024).toFixed(2)} MB - Ready for analysis.
-                    </AlertDescription>
-                  </div>
-                </Alert>
-              )}
+              <Card>
+                <CardContent className="p-4 flex items-center justify-between">
+                    <div className="flex items-center gap-4">
+                        <Button onClick={isAnalyzing ? handleCancel : handleAnalyzeClick} variant={isAnalyzing ? "destructive" : "default"}>
+                            {isAnalyzing ? <><Pause className="mr-2" /> Stop Analysis</> : <><Play className="mr-2" /> Start Analysis</>}
+                        </Button>
+                        <div className="text-sm text-muted-foreground">
+                            {isAnalyzing ? "Processing video..." : "Ready to analyze."}
+                        </div>
+                    </div>
+                    <div className="w-1/3">
+                        {isAnalyzing && (
+                            <div className="text-center">
+                                <Progress value={(processedChunks / totalChunks) * 100} className="h-2" />
+                                <span className="text-xs text-muted-foreground">Chunk {processedChunks + 1} of {totalChunks}</span>
+                            </div>
+                        )}
+                        {!isAnalyzing && totalChunks > 0 && (
+                             <span className="text-xs text-muted-foreground">Analysis complete.</span>
+                        )}
+                    </div>
+                </CardContent>
+              </Card>
             </div>
 
-            {/* Right Column: Analysis Results */}
-            <div className="flex flex-col">
-              <Button onClick={handleAnalyzeClick} disabled={isLoading || !file} className="w-full mb-4">
-                {isLoading ? (
-                  <>
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    Analyzing Video...
-                  </>
-                ) : (
-                  'Analyze and Create Alert'
-                )}
-              </Button>
-              
-              <Card className="bg-muted/30 flex-grow flex flex-col h-[60vh] lg:h-auto">
+            {/* Right Column: AI Log */}
+            <div className="flex flex-col h-[60vh] lg:h-auto">
+              <Card className="bg-muted/30 flex-grow flex flex-col">
                 <CardHeader className="py-3">
                   <CardTitle className="flex items-center gap-2 text-lg">
                     <Bot className="h-5 w-5 text-primary" />
-                    AI Analysis Log
+                    AI Analysis Live Log
                   </CardTitle>
                 </CardHeader>
                 <CardContent className="p-0 flex-grow overflow-hidden">
                   <ScrollArea className="h-full p-3">
                     <div className="space-y-4 text-sm">
-                      {isLoading && (
-                         <div className="flex items-center justify-center h-full text-muted-foreground">
-                          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                          Analyzing... Please wait.
-                        </div>
-                      )}
-                      {error && (
-                        <Alert variant="destructive">
-                          <AlertCircle className="h-4 w-4" />
-                          <AlertTitle>Error</AlertTitle>
-                          <AlertDescription>{error}</AlertDescription>
-                        </Alert>
-                      )}
-                       {analysisResult && (
-                        <div className="space-y-4">
-                           <div>
-                            <h4 className="font-semibold text-foreground">Incident Type</h4>
-                            <p className="text-muted-foreground">{analysisResult.incidentType}</p>
-                           </div>
-                           <Separator />
-                           <div>
-                            <h4 className="font-semibold text-foreground">Generated Report</h4>
-                            <p className="text-muted-foreground whitespace-pre-wrap">{analysisResult.report}</p>
-                           </div>
-                           <Separator />
-                           <div>
-                            <h4 className="font-semibold text-foreground">Suggested Department</h4>
-                            <Badge variant="secondary" className="text-base">{analysisResult.suggestedDepartment}</Badge>
-                           </div>
-                        </div>
-                      )}
-                      {!isLoading && !analysisResult && !error && (
+                      {analysisLogs.length === 0 && !isAnalyzing && (
                         <div className="flex items-center justify-center h-full text-muted-foreground">
-                          <p>Upload a video and click Analyze.</p>
+                          <p>Analysis log will appear here.</p>
+                        </div>
+                      )}
+                      {analysisLogs.map((log, index) => (
+                        <div key={index} className="p-3 rounded-md bg-background/50 border">
+                           <div className="flex justify-between items-center mb-2">
+                             <h4 className="font-semibold text-foreground">Chunk {log.chunk}: {log.incidentType}</h4>
+                             <span className="text-xs text-muted-foreground">{log.timestamp}</span>
+                           </div>
+                           <p className="text-muted-foreground text-xs mb-2 whitespace-pre-wrap">{log.report}</p>
+                           <p className="text-xs"><span className="font-semibold">Suggested Dept:</span> {log.suggestedDepartment}</p>
+                        </div>
+                      ))}
+                      {isAnalyzing && (
+                         <div className="flex items-center text-muted-foreground animate-pulse pt-4">
+                          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                          Analyzing chunk {processedChunks + 1}...
                         </div>
                       )}
                     </div>
                   </ScrollArea>
                 </CardContent>
-                {analysisResult && (
-                   <CardFooter className="p-3 border-t">
-                    <Button variant="destructive" className="w-full" onClick={handleDispatchPolice}>
-                        <Siren className="mr-2 h-4 w-4" />
-                        Dispatch Police
-                    </Button>
-                  </CardFooter>
-                )}
               </Card>
             </div>
-          </CardContent>
-        </Card>
+          </div>
+        )}
       </main>
     </div>
   );
 }
+
+    

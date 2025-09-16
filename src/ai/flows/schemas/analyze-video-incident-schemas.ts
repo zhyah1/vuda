@@ -1,3 +1,4 @@
+
 // src/ai/flows/schemas/analyze-video-incident-schemas.ts
 
 /**
@@ -12,7 +13,7 @@
 
 import { z } from 'genkit';
 
-export const DEPARTMENTS_LIST = ['Police', 'Fireforce', 'MVD', 'EMS', 'Disaster Management', 'Event Security', 'City Transit Authority', 'Public Works', 'Animal Control'];
+export const DEPARTMENTS_LIST = ['Police', 'Fireforce', 'MVD', 'EMS', 'Disaster Management', 'Event Security', 'City Transit Authority', 'Public Works', 'Animal Control', 'None'];
 
 export const AnalyzeVideoIncidentInputSchema = z.object({
   videoDataUri: z
@@ -29,3 +30,5 @@ export const AnalyzeVideoIncidentOutputSchema = z.object({
   suggestedDepartment: z.enum(DEPARTMENTS_LIST as [string, ...string[]]).describe('The single most appropriate department to handle this incident from the provided list.'),
 });
 export type AnalyzeVideoIncidentOutput = z.infer<typeof AnalyzeVideoIncidentOutputSchema>;
+
+    
