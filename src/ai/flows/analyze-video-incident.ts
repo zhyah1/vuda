@@ -23,7 +23,7 @@ export async function analyzeVideoIncident(input: AnalyzeVideoIncidentInput): Pr
 
 const prompt = ai.definePrompt({
   name: 'analyzeVideoIncidentPrompt',
-  model: 'googleai/gemini-1.5-flash', // A model that supports video
+  model: 'googleai/gemini-2.5-flash-lite', // A model that supports video
   input: { schema: AnalyzeVideoIncidentInputSchema },
   output: { schema: AnalyzeVideoIncidentOutputSchema },
   prompt: `You are an AI public safety monitoring system. Your ONLY task is to analyze the provided video and determine if it contains any of the predefined anomalies listed below.
