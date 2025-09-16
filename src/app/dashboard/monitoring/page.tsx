@@ -58,8 +58,10 @@ const VideoAnalysisSlot: React.FC<{
   const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const selectedFile = event.target.files?.[0];
     if (selectedFile) {
-      if (selectedFile.size > 20 * 1024 * 1024) { // 20MB limit
-         alert('File is too large. Please select a file smaller than 20MB.');
+      // Vercel Hobby tier has a 4.5MB limit for serverless function payloads.
+      // Base64 encoding increases size by ~33%, so we limit to ~4MB to be safe.
+      if (selectedFile.size > 4 * 1024 * 1024) { 
+         alert('File is too large. Please select a file smaller than 4MB for analysis.');
         return;
       }
       onFileSelect(slot.id, selectedFile);
@@ -67,7 +69,7 @@ const VideoAnalysisSlot: React.FC<{
   };
 
   const handleCardClick = () => {
-    if (slot.status === 'empty') {
+    if (slot.status === 'empty' || slot.status === 'error') {
       fileInputRef.current?.click();
     }
   };
@@ -76,7 +78,7 @@ const VideoAnalysisSlot: React.FC<{
     <Card 
       className={cn(
         "h-full w-full flex flex-col transition-all duration-300 relative aspect-video",
-        slot.status === 'empty' && 'cursor-pointer hover:border-primary',
+        (slot.status === 'empty' || slot.status === 'error') && 'cursor-pointer hover:border-primary',
         slot.status === 'analyzing' && 'border-primary shadow-lg',
         slot.status === 'analyzed' && 'border-green-500',
         slot.status === 'error' && 'border-destructive'
@@ -89,13 +91,15 @@ const VideoAnalysisSlot: React.FC<{
         ) : (
           <div className="flex flex-col items-center justify-center text-muted-foreground">
             <Upload className="h-8 w-8 mb-1" />
-            <p className="text-xs font-semibold">Upload Feed</p>
+            <p className="text-xs font-semibold">
+              {slot.status === 'error' ? 'Click to retry' : 'Upload Feed (< 4MB)'}
+            </p>
           </div>
         )}
 
         <div className="absolute bottom-0 left-0 right-0 bg-black/50 p-1.5 text-white text-xs">
-          {slot.status === 'analyzing' && <p className="animate-pulse">Analyzing...</p>}
-          {slot.status === 'error' && <p className="text-destructive-foreground">Error</p>}
+          {slot.status === 'analyzing' && <div className="flex items-center gap-1"><Loader2 className="h-3 w-3 animate-spin" />Analyzing...</div>}
+          {slot.status === 'error' && <p className="text-destructive-foreground truncate">{slot.error}</p>}
           {slot.status === 'analyzed' && slot.analysisResult && <p className="truncate text-green-300">{slot.analysisResult.incidentType}</p>}
           {(slot.status === 'empty' || slot.status === 'ready') && <p>Awaiting Video</p>}
         </div>
@@ -119,7 +123,7 @@ export default function MonitoringPage() {
   }, []);
 
   const handleAnalyze = useCallback(async (id: number, file: File) => {
-    setVideoSlots(prev => prev.map(s => s.id === id ? { ...s, status: 'analyzing' } : s));
+    setVideoSlots(prev => prev.map(s => s.id === id ? { ...s, status: 'analyzing', error: null } : s));
     toast({ title: `Analysis Started for Feed ${id + 1}` });
 
     try {
@@ -129,9 +133,7 @@ export default function MonitoringPage() {
           try {
             const base64data = reader.result as string;
             const result = await analyzeVideoIncident({ videoDataUri: base64data });
-            if (!result || !result.report) {
-              throw new Error('AI analysis failed to produce a valid report.');
-            }
+            // The flow now throws an error if output is invalid, so this check is simpler.
             resolve(result);
           } catch (err) { reject(err); }
         };
@@ -159,7 +161,14 @@ export default function MonitoringPage() {
       }
 
     } catch (err: any) {
-      const errorMessage = err.message || 'An unexpected error occurred during analysis.';
+      let errorMessage = 'An unexpected error occurred.';
+      if (err instanceof Error) {
+        errorMessage = err.message;
+      }
+      // Provide a more specific message if it seems like a size issue.
+      if (errorMessage.includes('larger than')) {
+        errorMessage = 'Analysis failed. The video file may be too large for the server to process.';
+      }
       setVideoSlots(prev => prev.map(s => s.id === id ? { ...s, status: 'error', error: errorMessage } : s));
       toast({ title: `Analysis Error for Feed ${id + 1}`, description: errorMessage, variant: 'destructive' });
     }
@@ -174,23 +183,23 @@ export default function MonitoringPage() {
 
   const handleFileSelect = useCallback((id: number, file: File) => {
     setVideoSlots(prevSlots => {
-      const newSlots = [...prevSlots];
-      const slotIndex = newSlots.findIndex(s => s.id === id);
-
-      if (slotIndex !== -1) {
-        if (newSlots[slotIndex].previewUrl) {
-          URL.revokeObjectURL(newSlots[slotIndex].previewUrl!);
+      return prevSlots.map(slot => {
+        if (slot.id === id) {
+          // Revoke old URL if it exists
+          if (slot.previewUrl) {
+            URL.revokeObjectURL(slot.previewUrl);
+          }
+          return {
+            ...slot,
+            file: file,
+            previewUrl: URL.createObjectURL(file),
+            status: 'ready',
+            error: null,
+            analysisResult: null,
+          };
         }
-        newSlots[slotIndex] = {
-          ...newSlots[slotIndex],
-          file: file,
-          previewUrl: URL.createObjectURL(file),
-          status: 'ready',
-          error: null,
-          analysisResult: null,
-        };
-      }
-      return newSlots;
+        return slot;
+      });
     });
   }, []);
 
