@@ -242,7 +242,7 @@ export default function MonitoringPage() {
 
         {/* Right Sidebar */}
         <div className="w-80 flex-shrink-0 bg-card border-l border-border p-4 flex flex-col gap-4">
-            <Card className="flex-grow flex flex-col">
+            <Card className="flex-[2_2_0%] flex flex-col">
                 <CardHeader>
                     <CardTitle className="flex items-center gap-2 text-lg"><Map className="h-5 w-5"/> Map</CardTitle>
                 </CardHeader>
@@ -250,7 +250,7 @@ export default function MonitoringPage() {
                     <CityMap incidents={incidents} newlyAddedIncidentIds={new Set()} />
                 </CardContent>
             </Card>
-             <Card className="flex-grow flex flex-col">
+             <Card className="flex-[1_1_0%] flex flex-col">
                 <CardHeader>
                     <CardTitle className="flex items-center gap-2 text-lg"><BarChart className="h-5 w-5"/> Analysis</CardTitle>
                 </CardHeader>
