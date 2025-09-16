@@ -18,6 +18,7 @@ import type { Incident, IncidentAction } from '@/lib/types';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { useRouter } from 'next/navigation';
+import { ScrollArea } from '@/components/ui/scroll-area';
 
 
 // This is a simplified context/store for sharing state between pages.
@@ -232,7 +233,7 @@ export default function UploadPage() {
                 )}
               </div>
               
-              {file && (
+              {file && !isLoading && !analysisResult && (
                 <Alert variant="default" className="flex items-center gap-4">
                   <FileVideo className="h-6 w-6 text-primary" />
                   <div>
@@ -257,45 +258,65 @@ export default function UploadPage() {
                   'Analyze and Create Alert'
                 )}
               </Button>
-              {error && (
-                <Alert variant="destructive">
-                  <AlertCircle className="h-4 w-4" />
-                  <AlertTitle>Error</AlertTitle>
-                  <AlertDescription>{error}</AlertDescription>
-                </Alert>
-              )}
-              {analysisResult && (
-                <Card className="mt-4 bg-muted/30 flex-grow flex flex-col">
-                  <CardHeader>
-                    <CardTitle className="flex items-center gap-2">
-                       <Bot className="h-6 w-6 text-primary" />
-                      AI Analysis Report
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent className="space-y-4 text-sm flex-grow">
-                     <div>
-                      <h4 className="font-semibold text-foreground">Incident Type</h4>
-                      <p className="text-muted-foreground">{analysisResult.incidentType}</p>
-                     </div>
-                     <Separator />
-                     <div>
-                      <h4 className="font-semibold text-foreground">Generated Report</h4>
-                      <p className="text-muted-foreground whitespace-pre-wrap">{analysisResult.report}</p>
-                     </div>
-                     <Separator />
-                     <div>
-                      <h4 className="font-semibold text-foreground">Suggested Department</h4>
-                      <Badge variant="secondary" className="text-base">{analysisResult.suggestedDepartment}</Badge>
-                     </div>
-                  </CardContent>
-                   <CardFooter>
+              
+              <Card className="bg-muted/30 flex-grow flex flex-col h-[60vh] lg:h-auto">
+                <CardHeader className="py-3">
+                  <CardTitle className="flex items-center gap-2 text-lg">
+                    <Bot className="h-5 w-5 text-primary" />
+                    AI Analysis Log
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="p-0 flex-grow overflow-hidden">
+                  <ScrollArea className="h-full p-3">
+                    <div className="space-y-4 text-sm">
+                      {isLoading && (
+                         <div className="flex items-center justify-center h-full text-muted-foreground">
+                          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                          Analyzing... Please wait.
+                        </div>
+                      )}
+                      {error && (
+                        <Alert variant="destructive">
+                          <AlertCircle className="h-4 w-4" />
+                          <AlertTitle>Error</AlertTitle>
+                          <AlertDescription>{error}</AlertDescription>
+                        </Alert>
+                      )}
+                       {analysisResult && (
+                        <div className="space-y-4">
+                           <div>
+                            <h4 className="font-semibold text-foreground">Incident Type</h4>
+                            <p className="text-muted-foreground">{analysisResult.incidentType}</p>
+                           </div>
+                           <Separator />
+                           <div>
+                            <h4 className="font-semibold text-foreground">Generated Report</h4>
+                            <p className="text-muted-foreground whitespace-pre-wrap">{analysisResult.report}</p>
+                           </div>
+                           <Separator />
+                           <div>
+                            <h4 className="font-semibold text-foreground">Suggested Department</h4>
+                            <Badge variant="secondary" className="text-base">{analysisResult.suggestedDepartment}</Badge>
+                           </div>
+                        </div>
+                      )}
+                      {!isLoading && !analysisResult && !error && (
+                        <div className="flex items-center justify-center h-full text-muted-foreground">
+                          <p>Upload a video and click Analyze.</p>
+                        </div>
+                      )}
+                    </div>
+                  </ScrollArea>
+                </CardContent>
+                {analysisResult && (
+                   <CardFooter className="p-3 border-t">
                     <Button variant="destructive" className="w-full" onClick={handleDispatchPolice}>
                         <Siren className="mr-2 h-4 w-4" />
                         Dispatch Police
                     </Button>
                   </CardFooter>
-                </Card>
-              )}
+                )}
+              </Card>
             </div>
           </CardContent>
         </Card>

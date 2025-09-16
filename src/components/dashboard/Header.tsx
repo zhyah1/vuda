@@ -3,7 +3,7 @@
 
 import type React from 'react';
 import Link from 'next/link';
-import { Upload, UserCircle2, Youtube } from 'lucide-react';
+import { Upload, UserCircle2 } from 'lucide-react';
 import VudaLogo from './VudaLogo';
 import { Button } from '@/components/ui/button';
 import { useRouter } from 'next/navigation';
@@ -17,12 +17,6 @@ const Header: React.FC = () => {
         <VudaLogo />
       </Link>
       <div className="flex items-center gap-3">
-        <Link href="/dashboard/live">
-          <Button variant="outline" size="sm">
-            <Youtube className="h-4 w-4 mr-2" />
-            Live Analysis
-          </Button>
-        </Link>
         <Link href="/dashboard/upload">
           <Button variant="outline" size="sm">
             <Upload className="h-4 w-4 mr-2" />
