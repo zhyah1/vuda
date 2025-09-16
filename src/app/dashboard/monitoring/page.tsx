@@ -58,12 +58,6 @@ const VideoAnalysisSlot: React.FC<{
   const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const selectedFile = event.target.files?.[0];
     if (selectedFile) {
-      // Vercel Hobby tier has a 4.5MB limit for serverless function payloads.
-      // Base64 encoding increases size by ~33%, so we limit to ~4MB to be safe.
-      if (selectedFile.size > 4 * 1024 * 1024) { 
-         alert('File is too large. Please select a file smaller than 4MB for analysis.');
-        return;
-      }
       onFileSelect(slot.id, selectedFile);
     }
   };
@@ -92,7 +86,7 @@ const VideoAnalysisSlot: React.FC<{
           <div className="flex flex-col items-center justify-center text-muted-foreground">
             <Upload className="h-8 w-8 mb-1" />
             <p className="text-xs font-semibold">
-              {slot.status === 'error' ? 'Click to retry' : 'Upload Feed (< 4MB)'}
+              {slot.status === 'error' ? 'Click to retry' : 'Upload Feed'}
             </p>
           </div>
         )}
