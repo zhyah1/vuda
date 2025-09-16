@@ -17,10 +17,10 @@ const Header: React.FC = () => {
         <VudaLogo />
       </Link>
       <div className="flex items-center gap-3">
-        <Link href="/dashboard/upload">
+        <Link href="/dashboard/monitoring">
           <Button variant="outline" size="sm">
             <LayoutGrid className="h-4 w-4 mr-2" />
-            Multi-Cam Analysis
+            Live Monitoring
           </Button>
         </Link>
         
