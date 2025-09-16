@@ -3,14 +3,14 @@
 'use client';
 
 import type React from 'react';
-import { useState, useRef, useEffect, useCallback, useMemo } from 'react';
+import { useState, useRef, useEffect, useCallback } from 'react';
 import Header from '@/components/dashboard/Header';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
-import { FileVideo, Bot, Loader2, Play, AlertCircle, Upload, CheckCircle, BarChart, ShieldAlert } from 'lucide-react';
+import { FileVideo, Bot, Loader2, Play, AlertCircle, Upload, CheckCircle, BarChart, ShieldAlert, AlertTriangle, Info } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { analyzeVideoIncident } from '@/ai/flows/analyze-video-incident';
 import type { AnalyzeVideoIncidentOutput } from '@/ai/flows/schemas/analyze-video-incident-schemas';
@@ -47,6 +47,27 @@ const initialSlots: VideoSlot[] = Array.from({ length: 4 }, (_, i) => ({
   status: 'empty',
 }));
 
+type IncidentPriority = 'Critical' | 'High' | 'Medium';
+
+const incidentPriorities: { [key: string]: IncidentPriority } = {
+  // Critical
+  'Weapon_Visible': 'Critical', 'Hostage_Situation': 'Critical', 'Person_Collapsed': 'Critical',
+  'Unconscious_Person': 'Critical', 'Explosion_Or_Smoke': 'Critical', 'Arson': 'Critical',
+  'Child_Abduction_Attempt': 'Critical', 'Building_Collapse_Risk': 'Critical', 'Active_Shooter': 'Critical',
+  'Hit_And_Run': 'Critical', 'Fire_Outbreak': 'Critical',
+
+  // High
+  'Physical_Assault': 'High', 'Fighting': 'High', 'Seizure_Activity': 'High',
+  'Crowd_Stampede': 'High', 'Riots_Or_Protest_Violence': 'High', 'Reckless_Driving': 'High',
+  'Accident_With_Injuries': 'High', 'Burglary_In_Progress': 'High', 'Robbery': 'High',
+  'Elderly_Person_Fallen': 'High', 'Gas_Leak_Suspected': 'High', 'Electrical_Spark_Hazard': 'High',
+
+  // Medium
+  'Vandalism_In_Progress': 'Medium', 'Loitering_With_Intent': 'Medium', 'Unauthorized_Access': 'Medium',
+  'Shoplifting': 'Medium', 'Pedestrian_In_Danger': 'Medium', 'Public_Intoxication': 'Medium',
+  'Harassment': 'Medium', 'Lost_Child': 'Medium'
+};
+
 // Video Slot Component
 const VideoAnalysisSlot: React.FC<{
   slot: VideoSlot;
@@ -67,6 +88,19 @@ const VideoAnalysisSlot: React.FC<{
     }
   };
 
+  const getBorderColor = () => {
+      if (slot.status === 'analyzing') return 'border-primary';
+      if (slot.status === 'error') return 'border-destructive';
+      if (slot.analysisResult?.isSignificant) {
+        const priority = incidentPriorities[slot.analysisResult.incidentType] || 'Medium';
+        if (priority === 'Critical') return 'border-destructive';
+        if (priority === 'High') return 'border-accent';
+        return 'border-primary'; // For Medium
+      }
+      if (slot.status === 'analyzed' && !slot.analysisResult?.isSignificant) return 'border-green-500';
+      return 'border-border';
+  };
+
   const incidentTypeText = slot.analysisResult?.incidentType.replace(/_/g, ' ') ?? 'Awaiting Analysis';
 
   return (
@@ -74,9 +108,7 @@ const VideoAnalysisSlot: React.FC<{
       className={cn(
         "h-full w-full flex flex-col transition-all duration-300 relative aspect-video",
         (slot.status === 'empty' || slot.status === 'error') && 'cursor-pointer hover:border-primary',
-        slot.status === 'analyzing' && 'border-primary shadow-lg',
-        slot.analysisResult?.isSignificant ? 'border-destructive' : 'border-green-500',
-        slot.status === 'error' && 'border-destructive'
+        getBorderColor()
       )}
       onClick={handleCardClick}
     >
@@ -121,6 +153,18 @@ export default function MonitoringPage() {
     setIncidents(getInitialMockIncidents());
   }, []);
 
+  const getToastInfo = (incidentType: string): { variant: 'destructive' | 'accent' | 'default', icon: React.ReactNode } => {
+    const priority = incidentPriorities[incidentType] || 'Medium';
+    switch (priority) {
+      case 'Critical':
+        return { variant: 'destructive', icon: <ShieldAlert className="h-5 w-5" /> };
+      case 'High':
+        return { variant: 'accent', icon: <AlertTriangle className="h-5 w-5" /> };
+      default: // Medium
+        return { variant: 'default', icon: <Info className="h-5 w-5" /> };
+    }
+  };
+
   const handleAnalyze = useCallback(async (id: number, file: File) => {
     setVideoSlots(prev => prev.map(s => s.id === id ? { ...s, status: 'analyzing', error: null } : s));
     
@@ -146,15 +190,16 @@ export default function MonitoringPage() {
       setVideoSlots(prev => prev.map(s => s.id === id ? { ...s, status: 'analyzed', analysisResult: result } : s));
       
       if(result.isSignificant) {
+          const { variant, icon } = getToastInfo(result.incidentType);
           toast({ 
               title: (
                 <div className="flex items-center gap-2">
-                  <ShieldAlert className="h-5 w-5 text-destructive-foreground" />
+                  {icon}
                   <span>New Alert: {result.incidentType.replace(/_/g, ' ')}</span>
                 </div>
               ), 
               description: `From Video Feed ${id + 1}`,
-              variant: 'destructive'
+              variant: variant as 'destructive' | 'accent' | 'default', // Cast for toast props
           });
            // Update chart data
           const time = new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: false });
@@ -187,7 +232,7 @@ export default function MonitoringPage() {
     if (file.size > MAX_FILE_SIZE) {
       toast({
         title: 'File Too Large',
-        description: `Please select a video file smaller than 200MB. For larger files, direct integration with a storage service is recommended.`,
+        description: `Please select a video file smaller than 200MB. This limit is for demonstration purposes.`,
         variant: 'destructive',
       });
       return;
