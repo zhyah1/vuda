@@ -7,45 +7,26 @@ import { useState, useRef, useEffect, useCallback } from 'react';
 import Header from '@/components/dashboard/Header';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
-import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
-import { FileVideo, Bot, Loader2, Play, AlertCircle, Upload, CheckCircle, BarChart, ShieldAlert, AlertTriangle, Info } from 'lucide-react';
+import { ScrollArea } from '@/components/ui/scroll-area';
+import { Upload, Video, Loader2, Bot, Send, AlertTriangle, MessageSquare, ShieldAlert, Info } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { analyzeVideoIncident } from '@/ai/flows/analyze-video-incident';
 import type { AnalyzeVideoIncidentOutput } from '@/ai/flows/schemas/analyze-video-incident-schemas';
+import { chatWithFeed, type ChatWithFeedInput } from '@/ai/flows/chat-with-feed-flow';
+import type { ChatMessage, Incident } from '@/lib/types';
 import { cn } from '@/lib/utils';
-import type { Incident } from '@/lib/types';
-import { getInitialMockIncidents } from '@/lib/mockData';
-import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
+import { format } from 'date-fns';
 
-// Mock chart data
-const initialChartData = [
-  { time: '10:00', anomalies: 0 },
-  { time: '10:05', anomalies: 0 },
-  { time: '10:10', anomalies: 0 },
-  { time: '10:15', anomalies: 0 },
-  { time: '10:20', anomalies: 0 },
-  { time: '10:25', anomalies: 0 },
-];
-
-interface VideoSlot {
-  id: number;
-  file: File | null;
-  previewUrl: string | null;
+interface VideoFile {
+  id: string;
+  file: File;
+  previewUrl: string;
   analysisResult: AnalyzeVideoIncidentOutput | null;
   error: string | null;
-  status: 'empty' | 'ready' | 'analyzing' | 'analyzed' | 'error';
+  status: 'pending' | 'analyzing' | 'analyzed' | 'error';
+  chatHistory: ChatMessage[];
 }
-
-const initialSlots: VideoSlot[] = Array.from({ length: 4 }, (_, i) => ({
-  id: i,
-  file: null,
-  previewUrl: null,
-  analysisResult: null,
-  error: null,
-  status: 'empty',
-}));
 
 type IncidentPriority = 'Critical' | 'High' | 'Medium';
 
@@ -68,90 +49,42 @@ const incidentPriorities: { [key: string]: IncidentPriority } = {
   'Harassment': 'Medium', 'Lost_Child': 'Medium'
 };
 
-// Video Slot Component
-const VideoAnalysisSlot: React.FC<{
-  slot: VideoSlot;
-  onFileSelect: (id: number, file: File) => void;
-}> = ({ slot, onFileSelect }) => {
-  const fileInputRef = useRef<HTMLInputElement>(null);
-
-  const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-    const selectedFile = event.target.files?.[0];
-    if (selectedFile) {
-      onFileSelect(slot.id, selectedFile);
-    }
-  };
-
-  const handleCardClick = () => {
-    if (slot.status === 'empty' || slot.status === 'error') {
-      fileInputRef.current?.click();
-    }
-  };
-
-  const getBorderColor = () => {
-      if (slot.status === 'analyzing') return 'border-primary';
-      if (slot.status === 'error') return 'border-destructive';
-      if (slot.analysisResult?.isSignificant) {
-        const priority = incidentPriorities[slot.analysisResult.incidentType] || 'Medium';
-        if (priority === 'Critical') return 'border-destructive';
-        if (priority === 'High') return 'border-accent';
-        return 'border-primary'; // For Medium
-      }
-      if (slot.status === 'analyzed' && !slot.analysisResult?.isSignificant) return 'border-green-500';
-      return 'border-border';
-  };
-
-  const incidentTypeText = slot.analysisResult?.incidentType.replace(/_/g, ' ') ?? 'Awaiting Analysis';
-
-  return (
-    <Card 
-      className={cn(
-        "h-full w-full flex flex-col transition-all duration-300 relative aspect-video",
-        (slot.status === 'empty' || slot.status === 'error') && 'cursor-pointer hover:border-primary',
-        getBorderColor()
-      )}
-      onClick={handleCardClick}
-    >
-      <div className="w-full h-full bg-muted/50 rounded-md overflow-hidden relative flex items-center justify-center">
-        {slot.previewUrl ? (
-          <video key={slot.previewUrl} src={slot.previewUrl} muted autoPlay loop className="w-full h-full object-cover" />
-        ) : (
-          <div className="flex flex-col items-center justify-center text-muted-foreground">
-            <Upload className="h-8 w-8 mb-1" />
-            <p className="text-xs font-semibold">
-              {slot.status === 'error' ? 'Click to retry' : 'Upload Feed'}
-            </p>
-          </div>
-        )}
-
-        <div className="absolute bottom-0 left-0 right-0 bg-black/50 p-1.5 text-white text-xs">
-          {slot.status === 'analyzing' && <div className="flex items-center gap-1"><Loader2 className="h-3 w-3 animate-spin" />Analyzing...</div>}
-          {slot.status === 'error' && <p className="text-destructive-foreground truncate">{slot.error}</p>}
-          {slot.status === 'analyzed' && (
-            <p className={cn("truncate", slot.analysisResult?.isSignificant ? "text-amber-400" : "text-green-300")}>
-                {incidentTypeText}
-            </p>
-          )}
-          {(slot.status === 'empty' || slot.status === 'ready') && <p>Awaiting Video</p>}
-        </div>
-
-      </div>
-      <input type="file" ref={fileInputRef} onChange={handleFileChange} className="hidden" accept="video/mp4,video/webm" />
-    </Card>
-  );
-};
-
 
 // Main Page Component
 export default function MonitoringPage() {
-  const [videoSlots, setVideoSlots] = useState<VideoSlot[]>(initialSlots);
-  const [incidents, setIncidents] = useState<Incident[]>([]);
-  const [chartData, setChartData] = useState(initialChartData);
+  const [videoFiles, setVideoFiles] = useState<VideoFile[]>([]);
+  const [selectedVideo, setSelectedVideo] = useState<VideoFile | null>(null);
+  const [currentChatMessage, setCurrentChatMessage] = useState('');
+  const [isChatLoading, setIsChatLoading] = useState(false);
+  
   const { toast } = useToast();
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const chatScrollAreaRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    setIncidents(getInitialMockIncidents());
-  }, []);
+    if (chatScrollAreaRef.current) {
+      const scrollElement = chatScrollAreaRef.current.querySelector('div > div'); 
+      if (scrollElement) {
+        scrollElement.scrollTop = scrollElement.scrollHeight;
+      }
+    }
+  }, [selectedVideo?.chatHistory]);
+
+  const addMessageToChat = (video: VideoFile, message: Omit<ChatMessage, 'id' | 'timestamp'>): VideoFile => {
+    const newMessage: ChatMessage = {
+      ...message,
+      id: `${message.sender}-${Date.now()}`,
+      timestamp: new Date(),
+    };
+    return { ...video, chatHistory: [...video.chatHistory, newMessage] };
+  };
+
+  const updateVideoFile = (updatedVideo: VideoFile) => {
+    setVideoFiles(prev => prev.map(v => v.id === updatedVideo.id ? updatedVideo : v));
+    if (selectedVideo?.id === updatedVideo.id) {
+      setSelectedVideo(updatedVideo);
+    }
+  };
 
   const getToastInfo = (incidentType: string): { variant: 'destructive' | 'accent' | 'default', icon: React.ReactNode } => {
     const priority = incidentPriorities[incidentType] || 'Medium';
@@ -165,9 +98,12 @@ export default function MonitoringPage() {
     }
   };
 
-  const handleAnalyze = useCallback(async (id: number, file: File) => {
-    setVideoSlots(prev => prev.map(s => s.id === id ? { ...s, status: 'analyzing', error: null } : s));
-    
+  const handleAnalyze = useCallback(async (videoToAnalyze: VideoFile) => {
+    let video = { ...videoToAnalyze, status: 'analyzing' as const, error: null };
+    video = addMessageToChat(video, { sender: 'ai', text: `Analyzing video: ${video.file.name}` });
+    updateVideoFile(video);
+    setSelectedVideo(video); // Make sure the selected video reflects the analyzing state.
+
     try {
       const reader = new FileReader();
       const analysisPromise = new Promise<AnalyzeVideoIncidentOutput>((resolve, reject) => {
@@ -175,151 +111,272 @@ export default function MonitoringPage() {
           try {
             const base64data = reader.result as string;
             const result = await analyzeVideoIncident({ videoDataUri: base64data });
-            if (!result || typeof result.isSignificant !== 'boolean' || typeof result.incidentType !== 'string') {
+             if (!result || typeof result.isSignificant !== 'boolean' || typeof result.incidentType !== 'string') {
                 throw new Error('The AI model returned an invalid data structure.');
             }
             resolve(result);
           } catch (err) { reject(err); }
         };
         reader.onerror = () => reject(new Error('Failed to read video file.'));
-        reader.readAsDataURL(file);
+        reader.readAsDataURL(video.file);
       });
       
       const result = await analysisPromise;
 
-      setVideoSlots(prev => prev.map(s => s.id === id ? { ...s, status: 'analyzed', analysisResult: result } : s));
+      let analyzedVideo = { ...video, status: 'analyzed' as const, analysisResult: result };
       
       if(result.isSignificant) {
-          const { variant, icon } = getToastInfo(result.incidentType);
-          toast({ 
-              title: (
-                <div className="flex items-center gap-2">
-                  {icon}
-                  <span>New Alert: {result.incidentType.replace(/_/g, ' ')}</span>
-                </div>
-              ), 
-              description: `From Video Feed ${id + 1}`,
-              variant: variant as 'destructive' | 'accent' | 'default', // Cast for toast props
-          });
-           // Update chart data
-          const time = new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: false });
-          setChartData(prev => [...prev.slice(-5), { time, anomalies: (prev.at(-1)?.anomalies ?? 0) + 1 }]);
+        const { variant, icon } = getToastInfo(result.incidentType);
+        toast({ 
+            title: (
+              <div className="flex items-center gap-2">
+                {icon}
+                <span>New Alert: {result.incidentType.replace(/_/g, ' ')}</span>
+              </div>
+            ), 
+            description: `From video: ${analyzedVideo.file.name}`,
+            variant: variant as 'destructive' | 'accent' | 'default',
+        });
+        analyzedVideo = addMessageToChat(analyzedVideo, { sender: 'ai', text: `Anomaly Detected: ${result.incidentType.replace(/_/g, ' ')}` });
       } else {
-         const time = new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: false });
-         setChartData(prev => [...prev.slice(-5), { time, anomalies: prev.at(-1)?.anomalies ?? 0 }]);
+         analyzedVideo = addMessageToChat(analyzedVideo, { sender: 'ai', text: `Analysis complete. No significant anomalies detected.` });
       }
+      updateVideoFile(analyzedVideo);
+      setSelectedVideo(analyzedVideo);
 
     } catch (err: any) {
-      let errorMessage = 'An unexpected error occurred.';
-      if (err instanceof Error) {
-        errorMessage = err.message;
-      }
-      setVideoSlots(prev => prev.map(s => s.id === id ? { ...s, status: 'error', error: errorMessage } : s));
-      toast({ title: `Analysis Error for Feed ${id + 1}`, description: errorMessage, variant: 'destructive' });
+      const errorMessage = err instanceof Error ? err.message : 'An unexpected error occurred during analysis.';
+      let errorVideo = { ...video, status: 'error' as const, error: errorMessage };
+      errorVideo = addMessageToChat(errorVideo, { sender: 'ai', text: `Error: ${errorMessage}` });
+      updateVideoFile(errorVideo);
+      setSelectedVideo(errorVideo);
+      toast({ title: `Analysis Error`, description: errorMessage, variant: 'destructive' });
     }
   }, [toast]);
 
-  useEffect(() => {
-    const readySlot = videoSlots.find(slot => slot.status === 'ready' && slot.file);
-    if (readySlot) {
-      handleAnalyze(readySlot.id, readySlot.file as File);
+  const handleFileSelect = useCallback((files: FileList | null) => {
+    if (!files || files.length === 0) return;
+    const file = files[0];
+    
+    // Check file type
+    if (!file.type.startsWith('video/')) {
+        toast({ title: 'Invalid File Type', description: 'Please select a valid video file.', variant: 'destructive' });
+        return;
     }
-  }, [videoSlots, handleAnalyze]);
+    
+    const newVideoId = `vid-${Date.now()}`;
+    const newVideoFile: VideoFile = {
+      id: newVideoId,
+      file,
+      previewUrl: URL.createObjectURL(file),
+      analysisResult: null,
+      error: null,
+      status: 'pending',
+      chatHistory: [],
+    };
 
-  const handleFileSelect = useCallback((id: number, file: File) => {
-    // Check file size (200MB limit for local testing)
-    const MAX_FILE_SIZE = 1024 * 1024 * 200; 
-    if (file.size > MAX_FILE_SIZE) {
-      toast({
-        title: 'File Too Large',
-        description: `Please select a video file smaller than 200MB. This limit is for demonstration purposes.`,
-        variant: 'destructive',
-      });
-      return;
+    setVideoFiles(prev => [...prev, newVideoFile]);
+    handleAnalyze(newVideoFile);
+
+  }, [toast, handleAnalyze]);
+
+  const handleSendChatMessage = async () => {
+    if (!currentChatMessage.trim() || !selectedVideo || isChatLoading) return;
+
+    const userMessage: Omit<ChatMessage, 'id' | 'timestamp'> = {
+      sender: 'user',
+      text: currentChatMessage.trim(),
+    };
+    const videoWithUserMessage = addMessageToChat(selectedVideo, userMessage);
+    updateVideoFile(videoWithUserMessage);
+    setSelectedVideo(videoWithUserMessage);
+    setCurrentChatMessage('');
+    setIsChatLoading(true);
+
+    try {
+      const incidentContext = {
+          title: `Video Analysis: ${selectedVideo.file.name}`,
+          location: "Uploaded Video",
+          timestamp: new Date().toISOString(),
+          initialAISystemAnalysis: selectedVideo.analysisResult ? `Anomaly: ${selectedVideo.analysisResult.incidentType}` : "None",
+      };
+
+      const input: ChatWithFeedInput = {
+        userQuestion: userMessage.text,
+        incidentContext: incidentContext,
+        chatHistory: selectedVideo.chatHistory.map(msg => ({ sender: msg.sender, text: msg.text })),
+      };
+
+      const result = await chatWithFeed(input);
+      
+      const aiResponse = result?.aiResponse || "I'm sorry, I couldn't process that request.";
+      const videoWithAiResponse = addMessageToChat(videoWithUserMessage, { sender: 'ai', text: aiResponse });
+      updateVideoFile(videoWithAiResponse);
+      setSelectedVideo(videoWithAiResponse);
+
+    } catch (error) {
+      const errorMessage = "Could not get a response from the AI. Please try again.";
+      const videoWithError = addMessageToChat(videoWithUserMessage, { sender: 'ai', text: errorMessage });
+      updateVideoFile(videoWithError);
+      setSelectedVideo(videoWithError);
+      toast({ title: "Chat Error", description: errorMessage, variant: "destructive" });
+    } finally {
+      setIsChatLoading(false);
     }
+  };
 
-    setVideoSlots(prevSlots => {
-      return prevSlots.map(slot => {
-        if (slot.id === id) {
-          // Revoke old URL if it exists
-          if (slot.previewUrl) {
-            URL.revokeObjectURL(slot.previewUrl);
-          }
-          return {
-            ...slot,
-            file: file,
-            previewUrl: URL.createObjectURL(file),
-            status: 'ready',
-            error: null,
-            analysisResult: null,
-          };
-        }
-        return slot;
-      });
-    });
-  }, [toast]);
 
   return (
     <div className="flex flex-col h-screen bg-background text-foreground">
       <Header />
       <main className="flex-grow pt-16 flex overflow-hidden">
-        {/* Left Sidebar */}
-        <div className="w-64 flex-shrink-0 bg-card border-r border-border p-4 flex flex-col gap-4">
-            <h3 className="text-lg font-semibold">Controls</h3>
-            <div className="space-y-2">
-                <Label>Time</Label>
+        {/* Left Sidebar: Chat/Log */}
+        <div className="w-80 flex-shrink-0 bg-card border-r border-border p-4 flex flex-col gap-4">
+          <Card className="flex-1 flex flex-col h-full">
+            <CardHeader className="p-3 border-b">
+                <CardTitle className="text-base font-semibold flex items-center">
+                <MessageSquare className="h-5 w-5 mr-2 text-primary" />
+                AI Chat & Log
+                </CardTitle>
+            </CardHeader>
+            <CardContent className="p-0 flex-grow overflow-hidden">
+                <ScrollArea className="h-full p-3" ref={chatScrollAreaRef}>
+                  <div className="space-y-4">
+                    {selectedVideo ? (
+                      selectedVideo.chatHistory.map((msg) => (
+                        <div
+                          key={msg.id}
+                          className={cn(
+                            "flex items-start gap-3 text-sm",
+                            msg.sender === 'user' && 'justify-end'
+                          )}
+                        >
+                          {msg.sender === 'ai' && <Bot className="h-5 w-5 text-primary shrink-0"/>}
+                          <div
+                            className={cn(
+                              "p-2 rounded-lg max-w-xs whitespace-pre-wrap",
+                              msg.sender === 'user' ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground'
+                            )}
+                          >
+                           {msg.text}
+                          </div>
+                        </div>
+                      ))
+                    ) : (
+                      <div className="text-center text-muted-foreground h-full flex items-center justify-center">
+                        <p>Upload a video to begin analysis.</p>
+                      </div>
+                    )}
+                    {isChatLoading && (
+                      <div className="flex items-start gap-3 text-sm">
+                        <Bot className="h-5 w-5 text-primary shrink-0"/>
+                        <div className="p-2 rounded-lg bg-muted text-muted-foreground flex items-center">
+                          <Loader2 className="h-4 w-4 animate-spin mr-2" /> Thinking...
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                </ScrollArea>
+            </CardContent>
+            {selectedVideo?.status === 'analyzed' && (
+              <div className="p-3 border-t border-border">
                 <div className="flex gap-2">
-                    <Input type="time" defaultValue="00:00:00" />
-                    <Input type="time" defaultValue="23:59:59" />
+                  <Input
+                    type="text"
+                    placeholder="Ask about this video..."
+                    value={currentChatMessage}
+                    onChange={(e) => setCurrentChatMessage(e.target.value)}
+                    onKeyPress={(e) => { if (e.key === 'Enter' && !isChatLoading) { handleSendChatMessage(); } }}
+                    disabled={isChatLoading || !selectedVideo}
+                    className="flex-grow"
+                  />
+                  <Button onClick={handleSendChatMessage} disabled={isChatLoading || !currentChatMessage.trim()}>
+                    <Send className="h-4 w-4" />
+                  </Button>
                 </div>
-            </div>
-             <div className="space-y-2">
-                <Label>Video Type</Label>
-                <RadioGroup defaultValue="normal">
-                    <div className="flex items-center space-x-2">
-                        <RadioGroupItem value="normal" id="r1" />
-                        <Label htmlFor="r1">Normal</Label>
-                    </div>
-                    <div className="flex items-center space-x-2">
-                        <RadioGroupItem value="alarm" id="r2" />
-                        <Label htmlFor="r2">Alarm</Label>
-                    </div>
-                </RadioGroup>
-            </div>
-             <div className="space-y-2">
-                <Label>Search Device</Label>
-                <Input placeholder="Device ID..." />
-            </div>
-            <Button>Search</Button>
+              </div>
+            )}
+          </Card>
         </div>
 
-        {/* Main Content */}
-        <div className="flex-grow p-4 grid grid-cols-2 grid-rows-2 gap-4">
-           {videoSlots.map(slot => (
-            <VideoAnalysisSlot key={slot.id} slot={slot} onFileSelect={handleFileSelect} />
-          ))}
+        {/* Main Content: Video Player */}
+        <div className="flex-grow p-6 flex flex-col items-center gap-6">
+           <h2 className="text-xl font-semibold text-foreground">Current Video</h2>
+           <Card className="w-full max-w-4xl aspect-video bg-muted flex items-center justify-center border-border shadow-lg">
+             {selectedVideo ? (
+                <video key={selectedVideo.previewUrl} src={selectedVideo.previewUrl} controls autoPlay muted className="w-full h-full object-contain rounded-md" />
+             ) : (
+                <div className="text-muted-foreground flex flex-col items-center">
+                  <Video className="h-16 w-16 mb-4"/>
+                  <p>No video selected</p>
+                </div>
+             )}
+           </Card>
+           <Card className="w-full max-w-4xl">
+              <CardHeader>
+                <CardTitle>Video Information</CardTitle>
+              </CardHeader>
+              <CardContent className="text-sm space-y-1">
+                <p><span className="font-semibold">Filename:</span> {selectedVideo?.file.name ?? 'N/A'}</p>
+                <p><span className="font-semibold">Status:</span> <span className={cn(
+                  selectedVideo?.status === 'analyzing' && 'text-primary',
+                  selectedVideo?.status === 'analyzed' && 'text-green-400',
+                  selectedVideo?.status === 'error' && 'text-destructive'
+                )}>{selectedVideo?.status ?? 'N/A'}</span></p>
+                 <p><span className="font-semibold">Anomalies:</span> {selectedVideo?.analysisResult?.isSignificant ? selectedVideo.analysisResult.incidentType.replace(/_/g, ' ') : 'None detected'}</p>
+              </CardContent>
+           </Card>
         </div>
 
-        {/* Right Sidebar */}
+        {/* Right Sidebar: Upload & Video List */}
         <div className="w-80 flex-shrink-0 bg-card border-l border-border p-4 flex flex-col gap-4">
-             <Card className="flex-1 flex flex-col">
-                <CardHeader>
-                    <CardTitle className="flex items-center gap-2 text-lg"><BarChart className="h-5 w-5"/> Analysis</CardTitle>
-                </CardHeader>
-                <CardContent className="flex-grow">
-                  <ResponsiveContainer width="100%" height="100%">
-                    <LineChart data={chartData} margin={{ top: 5, right: 20, left: -10, bottom: 5 }}>
-                      <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
-                      <XAxis dataKey="time" stroke="hsl(var(--muted-foreground))" fontSize={12} />
-                      <YAxis stroke="hsl(var(--muted-foreground))" fontSize={12} allowDecimals={false} />
-                      <Tooltip contentStyle={{ backgroundColor: 'hsl(var(--background))', border: '1px solid hsl(var(--border))' }}/>
-                      <Line type="monotone" dataKey="anomalies" stroke="hsl(var(--primary))" strokeWidth={2} name="Anomalies" />
-                    </LineChart>
-                  </ResponsiveContainer>
-                </CardContent>
-            </Card>
+             <h3 className="text-lg font-semibold">Upload Video</h3>
+             <div 
+                className="flex flex-col items-center justify-center p-6 border-2 border-dashed border-border rounded-lg cursor-pointer hover:bg-muted/50"
+                onClick={() => fileInputRef.current?.click()}
+             >
+                <Upload className="h-10 w-10 text-muted-foreground mb-2"/>
+                <p className="text-sm text-muted-foreground">Drop video here or click to browse</p>
+                <p className="text-xs text-muted-foreground mt-1">MP4, WebM, MOV</p>
+             </div>
+             <input type="file" ref={fileInputRef} onChange={(e) => handleFileSelect(e.target.files)} className="hidden" accept="video/mp4,video/webm,video/mov" />
+
+            <h3 className="text-lg font-semibold mt-4">Video History</h3>
+            <ScrollArea className="flex-1 -mx-4">
+              <div className="px-4 space-y-2">
+                {videoFiles.length > 0 ? videoFiles.slice().reverse().map(video => (
+                  <Card 
+                    key={video.id} 
+                    className={cn(
+                      "p-2 flex items-center gap-3 cursor-pointer hover:border-primary",
+                      selectedVideo?.id === video.id && 'border-primary'
+                    )}
+                    onClick={() => setSelectedVideo(video)}
+                  >
+                    <div className="w-20 h-12 bg-muted rounded-md overflow-hidden shrink-0">
+                      <video src={video.previewUrl} muted className="w-full h-full object-cover" />
+                    </div>
+                    <div className="flex-1 overflow-hidden">
+                      <p className="text-sm font-medium truncate">{video.file.name}</p>
+                      <p className={cn("text-xs",
+                         video.status === 'analyzing' && 'text-primary animate-pulse',
+                         video.status === 'analyzed' && video.analysisResult?.isSignificant && 'text-amber-400',
+                         video.status === 'analyzed' && !video.analysisResult?.isSignificant && 'text-green-400',
+                         video.status === 'error' && 'text-destructive',
+                      )}>
+                        {video.status === 'analyzed' ? video.analysisResult?.incidentType.replace(/_/g, ' ') : video.status}
+                      </p>
+                    </div>
+                  </Card>
+                )) : (
+                  <p className="text-sm text-muted-foreground text-center py-4">No videos uploaded yet.</p>
+                )}
+              </div>
+            </ScrollArea>
         </div>
       </main>
     </div>
   );
 }
+
+    
