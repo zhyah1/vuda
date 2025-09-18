@@ -1,6 +1,6 @@
 'use server';
 /**
- * @fileOverview AI flow to chat about an incident based on its context.
+ * @fileOverview AI flow to chat about an incident based on its context and video content.
  *
  * - chatWithFeed - A function that handles chat interactions regarding an incident.
  * - ChatWithFeedInput - The input type for the chatWithFeed function.
@@ -33,6 +33,9 @@ const ChatWithFeedInputSchema = z.object({
   userQuestion: z.string().describe('The user_s current question about the incident.'),
   incidentContext: IncidentContextSchema.describe('The context of the incident being discussed.'),
   chatHistory: z.array(ChatMessageSchema).optional().describe('The recent history of the conversation.'),
+  videoDataUri: z.string().optional().describe(
+      "A video of an incident, as a data URI that must include a MIME type and use Base64 encoding. Expected format: 'data:<mimetype>;base64,<encoded_data>'."
+    ),
 });
 export type ChatWithFeedInput = z.infer<typeof ChatWithFeedInputSchema>;
 
@@ -51,8 +54,14 @@ const prompt = ai.definePrompt({
   input: {schema: ChatWithFeedInputSchema},
   output: {schema: ChatWithFeedOutputSchema},
   prompt: `You are a helpful AI assistant for the VUDA Public Safety Platform. You are interacting with an operator viewing an incident report.
-Your goal is to answer questions about the incident based *only* on the information provided in the "Incident Context" and the "Chat History".
-Do not make up information. If the answer is not in the provided context, say that you don't have that information. Be concise.
+Your goal is to answer questions about the incident. Your primary source of information is the provided video content.
+Use the "Incident Context" and "Chat History" for additional information, but the video is the ground truth.
+Do not make up information. If the answer is not in the provided video or context, say that you don't have that information. Be concise.
+
+{{#if videoDataUri}}
+Video Content:
+{{media url=videoDataUri}}
+{{/if}}
 
 Incident Context:
 Title: {{incidentContext.title}}
@@ -64,7 +73,8 @@ Timestamp: {{incidentContext.timestamp}}
 Chat History:
 {{#if chatHistory}}
   {{#each chatHistory}}
-    User: {{this.text}}
+    {{#if (eq this.sender "user")}}User: {{this.text}}{{/if}}
+    {{#if (eq this.sender "ai")}}AI: {{this.text}}{{/if}}
   {{/each}}
 {{else}}
   No previous messages in this conversation.

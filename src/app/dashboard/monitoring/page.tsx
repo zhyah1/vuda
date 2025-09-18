@@ -187,42 +187,57 @@ export default function MonitoringPage() {
       sender: 'user',
       text: currentChatMessage.trim(),
     };
-    const videoWithUserMessage = addMessageToChat(selectedVideo, userMessage);
+    let videoWithUserMessage = addMessageToChat(selectedVideo, userMessage);
     updateVideoFile(videoWithUserMessage);
-    setSelectedVideo(videoWithUserMessage);
     setCurrentChatMessage('');
     setIsChatLoading(true);
 
     try {
-      const incidentContext = {
-          title: `Video Analysis: ${selectedVideo.file.name}`,
-          location: "Uploaded Video",
-          timestamp: new Date().toISOString(),
-          initialAISystemAnalysis: selectedVideo.analysisResult ? `Anomaly: ${selectedVideo.analysisResult.incidentType}` : "None",
-      };
+        const reader = new FileReader();
+        const videoDataUriPromise = new Promise<string>((resolve, reject) => {
+            reader.onloadend = () => resolve(reader.result as string);
+            reader.onerror = () => reject(new Error('Failed to read video file.'));
+            reader.readAsDataURL(selectedVideo.file);
+        });
 
-      const input: ChatWithFeedInput = {
-        userQuestion: userMessage.text,
-        incidentContext: incidentContext,
-        chatHistory: videoWithUserMessage.chatHistory.map(msg => ({ sender: msg.sender, text: msg.text })),
-      };
+        const videoDataUri = await videoDataUriPromise;
 
-      const result = await chatWithFeed(input);
-      
-      const aiResponse = result?.aiResponse || "I'm sorry, I couldn't process that request.";
-      const videoWithAiResponse = addMessageToChat(videoWithUserMessage, { sender: 'ai', text: aiResponse });
-      updateVideoFile(videoWithAiResponse);
-      setSelectedVideo(videoWithAiResponse);
+        const incidentContext = {
+            title: `Video Analysis: ${selectedVideo.file.name}`,
+            location: "Uploaded Video",
+            timestamp: new Date().toISOString(),
+            initialAISystemAnalysis: selectedVideo.analysisResult ? `Anomaly: ${selectedVideo.analysisResult.incidentType}` : "None",
+        };
+
+        const input: ChatWithFeedInput = {
+            userQuestion: userMessage.text,
+            incidentContext: incidentContext,
+            chatHistory: videoWithUserMessage.chatHistory.map(msg => ({ sender: msg.sender, text: msg.text })),
+            videoDataUri: videoDataUri, // Pass the video data
+        };
+
+        const result = await chatWithFeed(input);
+        
+        const aiResponse = result?.aiResponse || "I'm sorry, I couldn't process that request.";
+        const videoWithAiResponse = addMessageToChat(videoWithUserMessage, { sender: 'ai', text: aiResponse });
+        updateVideoFile(videoWithAiResponse);
 
     } catch (error) {
-      console.error('Chat error:', error);
-      const errorMessage = "Could not get a response from the AI. Please try again.";
-      const videoWithError = addMessageToChat(videoWithUserMessage, { sender: 'ai', text: errorMessage });
-      updateVideoFile(videoWithError);
-      setSelectedVideo(videoWithError);
-      toast({ title: "Chat Error", description: errorMessage, variant: "destructive" });
+        console.error('Chat error:', error);
+        const errorMessage = "Could not get a response from the AI. Please try again.";
+        const videoWithError = addMessageToChat(videoWithUserMessage, { sender: 'ai', text: errorMessage });
+        updateVideoFile(videoWithError);
+        toast({ title: "Chat Error", description: errorMessage, variant: "destructive" });
     } finally {
-      setIsChatLoading(false);
+        setIsChatLoading(false);
+        // We update the selected video state from the potentially modified video list
+        setVideoFiles(currentFiles => {
+            const updatedSelected = currentFiles.find(v => v.id === selectedVideo.id);
+            if (updatedSelected) {
+                setSelectedVideo(updatedSelected);
+            }
+            return currentFiles;
+        });
     }
   };
 
@@ -279,7 +294,7 @@ export default function MonitoringPage() {
                   </div>
                 </ScrollArea>
             </CardContent>
-            {selectedVideo?.status === 'analyzed' && (
+            {selectedVideo && ( // Show chat input if any video is selected, not just analyzed
               <div className="p-3 border-t border-border">
                 <div className="flex gap-2">
                   <Input
@@ -379,5 +394,3 @@ export default function MonitoringPage() {
     </div>
   );
 }
-
-    
