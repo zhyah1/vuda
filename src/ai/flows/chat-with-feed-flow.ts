@@ -64,8 +64,7 @@ Timestamp: {{incidentContext.timestamp}}
 Chat History:
 {{#if chatHistory}}
   {{#each chatHistory}}
-    {{#if (eq this.sender "user")}}User: {{this.text}}{{/if}}
-    {{#if (eq this.sender "ai")}}AI: {{this.text}}{{/if}}
+    User: {{this.text}}
   {{/each}}
 {{else}}
   No previous messages in this conversation.
