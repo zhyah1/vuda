@@ -28,7 +28,7 @@ const prompt = ai.definePrompt({
   output: { schema: AnalyzeVideoIncidentOutputSchema },
   prompt: `You are an AI public safety monitoring system. Your ONLY task is to analyze the provided video and determine if it contains any of the predefined anomalies listed below.
 
-Watch the entire video carefully. Identify the SINGLE most critical and significant anomaly present.
+Watch the entire video carefully. Identify the SINGLE most critical and significant anomaly present. If you observe a large number of people congregated in a single area, you should identify this as a 'Crowd_Gathering'.
 
 If a significant anomaly is detected, set "isSignificant" to true and set "incidentType" to the corresponding anomaly key (e.g., "Physical_Assault").
 If the video shows normal, everyday activity with no threats or emergencies, set "isSignificant" to false and set "incidentType" to "Normal_Activity".
