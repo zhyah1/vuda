@@ -29,7 +29,6 @@ export const ANOMALY_DEFINITIONS = `
    - Overdose_Suspected: Signs of a potential drug overdose.
 
 3. Public Safety Threats
-   - Crowd_Stampede: A large crowd moving in a panicked, uncontrolled manner.
    - Riots_Or_Protest_Violence: A protest that has turned violent, with property damage or fighting.
    - Vandalism_In_Progress: Active destruction or defacement of property.
    - Arson: The act of deliberately setting fire to property.
@@ -80,7 +79,13 @@ export const ANOMALY_DEFINITIONS = `
     - Broken_Escalator_Elevator: A malfunctioning escalator or elevator with people in danger.
     - Water_Leak_Flooding: A major water leak leading to flooding.
     
-11. Normal Activity
+11. Crowd Dynamics
+    - Crowd_Gathering: A large and dense crowd is forming in a specific location.
+    - Crowd_Panic: A crowd showing signs of panic, such as running in multiple directions.
+    - Crowd_Stampede: A large crowd moving in a panicked, uncontrolled, and dangerous manner.
+    - Crowd_Dispersion: A large crowd suddenly breaking up and leaving an area.
+
+12. Normal Activity
     - Normal_Activity: No significant anomalies or threats detected. Standard public or private behavior.
 `;
 

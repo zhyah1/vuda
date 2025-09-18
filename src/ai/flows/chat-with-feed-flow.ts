@@ -73,8 +73,8 @@ Timestamp: {{incidentContext.timestamp}}
 Chat History:
 {{#if chatHistory}}
   {{#each chatHistory}}
-    {{#if (eq this.sender "user")}}User: {{this.text}}{{/if}}
-    {{#if (eq this.sender "ai")}}AI: {{this.text}}{{/if}}
+    {{#if isUser}}User: {{text}}{{/if}}
+    {{#if isAI}}AI: {{text}}{{/if}}
   {{/each}}
 {{else}}
   No previous messages in this conversation.
@@ -98,7 +98,17 @@ const chatWithFeedFlow = ai.defineFlow(
       input.chatHistory = input.chatHistory.slice(-maxHistoryLength);
     }
 
-    const {output} = await prompt(input);
+    // Transform chat history to avoid using the eq helper
+    const processedInput = {
+      ...input,
+      chatHistory: input.chatHistory?.map(msg => ({
+        ...msg,
+        isUser: msg.sender === 'user',
+        isAI: msg.sender === 'ai'
+      }))
+    };
+
+    const {output} = await prompt(processedInput);
     if (!output || !output.aiResponse) {
       // Fallback or error handling if the model doesn't return the expected structure
       return { aiResponse: "I'm sorry, I couldn't process that request. Please try rephrasing." };

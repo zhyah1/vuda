@@ -35,18 +35,18 @@ const incidentPriorities: { [key: string]: IncidentPriority } = {
   'Weapon_Visible': 'Critical', 'Hostage_Situation': 'Critical', 'Person_Collapsed': 'Critical',
   'Unconscious_Person': 'Critical', 'Explosion_Or_Smoke': 'Critical', 'Arson': 'Critical',
   'Child_Abduction_Attempt': 'Critical', 'Building_Collapse_Risk': 'Critical', 'Active_Shooter': 'Critical',
-  'Hit_And_Run': 'Critical', 'Fire_Outbreak': 'Critical',
+  'Hit_And_Run': 'Critical', 'Fire_Outbreak': 'Critical', 'Crowd_Stampede': 'Critical', 'Crowd_Panic': 'Critical',
 
   // High
   'Physical_Assault': 'High', 'Fighting': 'High', 'Seizure_Activity': 'High',
-  'Crowd_Stampede': 'High', 'Riots_Or_Protest_Violence': 'High', 'Reckless_Driving': 'High',
+  'Riots_Or_Protest_Violence': 'High', 'Reckless_Driving': 'High',
   'Accident_With_Injuries': 'High', 'Burglary_In_Progress': 'High', 'Robbery': 'High',
   'Elderly_Person_Fallen': 'High', 'Gas_Leak_Suspected': 'High', 'Electrical_Spark_Hazard': 'High',
 
   // Medium
   'Vandalism_In_Progress': 'Medium', 'Loitering_With_Intent': 'Medium', 'Unauthorized_Access': 'Medium',
   'Shoplifting': 'Medium', 'Pedestrian_In_Danger': 'Medium', 'Public_Intoxication': 'Medium',
-  'Harassment': 'Medium', 'Lost_Child': 'Medium'
+  'Harassment': 'Medium', 'Lost_Child': 'Medium', 'Crowd_Gathering': 'Medium', 'Crowd_Dispersion': 'Medium'
 };
 
 
